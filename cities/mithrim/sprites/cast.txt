@@ -1,0 +1,7 @@
+# Mithrim's sprites in map order (build.py reads this; see the README, "Reusing sprites").
+# The lords: Fingolfin, Fingon, Maedhros, Turgon, Aredhel.
+noldor/fingolfin noldor/fingon own:0 noldor/turgon own:1
+# One per quarter, in district order: the King's House, Fingon's Folk, the Lakewardens, the Grey-elves of Mithrim.
+noldor/guard-of-fingolfin noldor/guard noldor/river-warden own:2
+# The townsfolk, in the usual order.
+noldor/townsfolk

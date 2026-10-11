@@ -1,0 +1,4 @@
+# Mithrim's own sprites (everything else comes from the library: see cast.txt). Noldor are beardless; the Sindar silver-grey.
+Maedhros, eldest son of Fëanor: a very tall elf lord with long copper-red hair and no beard, pale and gaunt, his right hand missing with a bound stump, a dark red tunic with a silver star, a long sword at his left side
+Aredhel Ar-Feiniel, the White Lady of the Noldor: a tall elf woman with long dark hair and no beard, pale skin, dressed all in white and silver, a short white cloak, carrying a hunting bow
+a Grey-elf of Mithrim: a Sindarin elf hunter with long silver-grey hair and no beard, a grey-green hooded cloak, a leather jerkin and a longbow

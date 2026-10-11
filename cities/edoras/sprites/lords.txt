@@ -1,0 +1,7 @@
+# The named people of Edoras, in the order the map expects. The Rohirrim are tall Men, mostly fair-haired, often with long braids; the men are usually bearded.
+Théoden, King of Rohan: an old but proud human king with long white hair and a long white beard, a golden crown, gold-trimmed green and white chain mail, a long green cloak, and a sword
+Éowyn, the White Lady of Rohan: a tall human woman with long flowing golden hair, grey eyes, a white robe, a silver circlet and a long white cloak, unarmed
+Éomer, Third Marshal of the Riddermark: a tall human warrior with long golden braided hair and a short golden beard, green and silver chain mail, a helmet, a long green cloak, a sword and a green shield
+Gríma Wormtongue, counsellor to the king: a pale, hunched human man with lank black hair and no beard, dark eyes, a black robe with a black hood, unarmed
+Háma, doorward of the King: a tall human guard with long fair hair in braids and a fair beard, gleaming chain mail, a helmet, a short green cloak, a sword and a round green shield
+Gamling, an old warrior of Rohan: an old human man with grey hair in braids and a long grey beard, leather armor, a short brown cloak, and a sword

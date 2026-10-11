@@ -1,0 +1,5 @@
+# The lords of Tol Sirion, in the order the map expects. Finrod's people are Noldor of the house of Finarfin:
+# tall, grey-eyed, beardless, and many of them golden-haired.
+Orodreth, Warden of Minas Tirith on Tol Sirion: a tall elf lord with long golden-brown hair and no beard, grey eyes, a silver circlet, silver mail under a deep blue surcoat with a white tower emblem, a blue cloak, and a spear
+Finrod Felagund, King of Nargothrond: a tall elf king with long golden hair and no beard, grey eyes, a slender golden crown, gold and silver scale armor, a deep blue cloak, and a small harp slung at his side
+Edrahil of Nargothrond, Finrod's companion: an elf warrior with long dark hair and no beard, grey eyes, silver mail, a grey-blue cloak, and a sword

@@ -1,0 +1,690 @@
+<title>The Maps of Arda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
+<style>
+/* Layout: one full-screen illustrated map per age; tabs and title float at the top, a lore card opens beside a clicked place.
+   A deliberate single look: an inked map on parchment, the same in light and dark. */
+:root{
+  --parch:#efe3c4; --parch-d:#e2d1a6; --ink:#3b2a1a; --ink-soft:#6b5640; --red:#8c2f1b; --gold:#b88a2c;
+  --sea:#c3d2c9; --sea-d:#9fb7ae; --river:#4f7f97; --leaf:#8a9963;
+  --f-sc:"IM Fell English SC","IM Fell English",Georgia,serif;
+  --f-body:"IM Fell English",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden}
+body{background:var(--sea);color:var(--ink);font-family:var(--f-body);font-size:16px}
+#app{position:relative;height:100%;overflow:hidden;background:var(--sea)}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;transform-origin:0 0;will-change:transform}
+#map.dragging{cursor:grabbing}
+#paper{position:absolute;inset:0;pointer-events:none;opacity:.26;background-size:256px 256px}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(70,45,20,.28) 100%)}
+.sheet{background:rgba(239,227,196,.95);border:1px solid rgba(59,42,26,.35);box-shadow:0 6px 20px rgba(59,42,26,.25)}
+
+#top{position:absolute;top:14px;left:16px;right:16px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;pointer-events:none;z-index:3}
+#title{pointer-events:auto;padding:10px 16px 12px;border-radius:4px;max-width:380px}
+#title h1{margin:0;font-family:var(--f-sc);font-weight:400;font-size:28px;letter-spacing:.06em;line-height:1}
+#title p{margin:6px 0 0;font-style:italic;color:var(--ink-soft);font-size:15px;line-height:1.3}
+#tabs{pointer-events:auto;display:flex;border-radius:4px;overflow:hidden}
+#tabs button{font:inherit;font-family:var(--f-sc);font-size:16px;letter-spacing:.04em;border:0;background:transparent;color:var(--ink);padding:9px 16px;cursor:pointer}
+#tabs button[aria-selected="true"]{background:var(--red);color:var(--parch)}
+#tabs button:focus-visible,#controls button:focus-visible,.place:focus-visible,#card a:focus-visible,#card button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+#card{position:absolute;right:16px;top:86px;width:330px;max-width:calc(100% - 32px);padding:16px 18px 16px;border-radius:4px;z-index:3;box-sizing:border-box}
+#card .kicker{margin:0;font-family:var(--f-sc);letter-spacing:.12em;font-size:13px;color:var(--red)}
+#card h2{margin:2px 0 0;font-family:var(--f-sc);font-weight:400;font-size:26px;line-height:1.1;text-wrap:balance}
+#card .alt{margin:4px 0 0;font-style:italic;color:var(--ink-soft)}
+#card .lore{margin:10px 0 0;line-height:1.4}
+#card .go{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:9px 14px;background:var(--red);color:var(--parch);text-decoration:none;font-family:var(--f-sc);letter-spacing:.06em;border-radius:3px}
+#card .soon{display:inline-block;margin-top:14px;padding:5px 10px;border:1px dashed var(--ink-soft);color:var(--ink-soft);font-style:italic;border-radius:3px}
+#card .close{position:absolute;top:8px;right:8px;width:30px;height:30px;border:1px solid rgba(59,42,26,.3);background:transparent;color:var(--ink);font-size:18px;border-radius:3px;cursor:pointer}
+
+#controls{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;z-index:3}
+#controls button{width:38px;height:38px;border-radius:3px;font:inherit;font-size:20px;color:var(--ink);cursor:pointer;display:grid;place-items:center;padding:0}
+#legend{position:absolute;left:16px;bottom:16px;padding:9px 12px;border-radius:4px;font-size:14px;z-index:3;display:flex;flex-direction:column;gap:4px;max-width:calc(100% - 100px)}
+#legend span{display:flex;align-items:center;gap:8px}
+#legend svg{flex:none}
+#legend .note{color:var(--ink-soft);font-style:italic;font-size:13px}
+#tip{position:absolute;z-index:4;pointer-events:none;padding:3px 8px;border-radius:3px;font-size:14px}
+
+/* the map's ink */
+.land{fill:var(--parch);stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round}
+.coastA{fill:none;stroke:var(--sea-d);stroke-width:26;stroke-linejoin:round;opacity:.45}
+.coastB{fill:none;stroke:var(--sea-d);stroke-width:14;stroke-linejoin:round;opacity:.5}
+.coastC{fill:none;stroke:#d4ddd2;stroke-width:6;stroke-linejoin:round}
+.lake{fill:var(--sea);stroke:var(--ink);stroke-width:1}
+.river{fill:none;stroke:var(--river);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.peak{fill:var(--parch);stroke:var(--ink);stroke-width:.9;stroke-linejoin:round}
+.hatch{fill:none;stroke:var(--ink);stroke-width:.6;opacity:.75}
+.tree{fill:var(--leaf);stroke:var(--ink);stroke-width:.55}
+.trunk{stroke:var(--ink);stroke-width:.6}
+.region{font-family:var(--f-sc);fill:var(--red);text-anchor:middle;letter-spacing:.35em;paint-order:stroke;stroke:var(--parch);stroke-width:3px;stroke-linejoin:round;stroke-opacity:.85}
+.seaname{font-family:var(--f-sc);fill:#4a6a72;opacity:.8;text-anchor:middle;letter-spacing:.4em}
+.rivername{font-family:var(--f-body);font-style:italic;fill:var(--river);font-size:8px}
+.plabel{font-family:var(--f-body);fill:var(--ink);font-size:9.5px;paint-order:stroke;stroke:var(--parch);stroke-width:2.6px;stroke-linejoin:round}
+.plabel.built{font-family:var(--f-sc);font-size:12px;fill:var(--red)}
+.plabel.soon{font-style:italic;fill:var(--ink-soft)}
+.place{cursor:pointer}
+.place .hit{fill:transparent}
+.place.built .seal{fill:var(--red);stroke:var(--gold);stroke-width:1.6}
+.place.built .ring{fill:none;stroke:var(--red);stroke-width:1;opacity:.6}
+.place.soon .dot{fill:var(--parch);stroke:var(--ink-soft);stroke-width:1.1}
+.place:hover .plabel,.place.on .plabel{text-decoration:underline}
+.place.on .seal,.place.on .dot{stroke:var(--gold);stroke-width:2.4}
+.minor-off .minor,.fine-off .fine{display:none}
+/* the painted style (Beleriand) */
+.painted .region{stroke-width:2.6px;stroke-opacity:.8;font-weight:400}
+.painted .rivername{fill:#2a5f8f;paint-order:stroke;stroke:#f3e6b8;stroke-width:2px;stroke-opacity:.8;stroke-linejoin:round}
+.painted .pname{font-family:var(--f-body);font-style:italic;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:rgba(243,230,184,.7);stroke-width:1.6px;stroke-linejoin:round}
+.painted .seaname{fill:#2f5b8c;opacity:.85;letter-spacing:.25em}
+.painted .seaname.vertical{letter-spacing:0}
+.painted .plabel{stroke:#f4e6b4}
+.painted-c rect{fill:#f5ead0;stroke:#5a3b22}
+.painted-c .t{fill:#a3361f;letter-spacing:.08em}
+.cartouche rect{fill:var(--parch);stroke:var(--ink);stroke-width:1.2}
+.cartouche .t{font-family:var(--f-sc);fill:var(--ink);text-anchor:middle}
+.cartouche .s{font-family:var(--f-body);font-style:italic;fill:var(--ink-soft);text-anchor:middle}
+@media (prefers-reduced-motion: no-preference){ .place.built .ring{animation:pulse 2.4s ease-out infinite} }
+@keyframes pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(2.2)}}
+.place.built .ring{transform-box:fill-box;transform-origin:center}
+
+@media (max-width:720px){
+  #top{flex-direction:column;align-items:stretch}
+  #title{max-width:none;padding:8px 12px}
+  #title h1{font-size:22px}
+  #title p{display:none}
+  #tabs button{flex:1;padding:8px 6px;font-size:14px}
+  #card{top:auto;bottom:14px;right:12px;left:12px;width:auto;max-height:52%;overflow:auto}
+  #legend{display:none}
+}
+</style>
+
+<div id="app">
+  <svg id="map" role="img" aria-label="An illustrated map; click a place to read about it"></svg>
+  <div id="paper" aria-hidden="true"></div>
+  <div id="vignette"></div>
+
+  <div id="top">
+    <div id="title" class="sheet">
+      <h1>The Maps of Arda</h1>
+      <p id="subtitle">Click a red seal to open that city's map.</p>
+    </div>
+    <div id="tabs" class="sheet" role="tablist" aria-label="Age">
+      <button role="tab" id="tab-beleriand" data-age="beleriand" aria-selected="false">First Age · Beleriand</button>
+      <button role="tab" id="tab-middle-earth" data-age="middle-earth" aria-selected="true">Third Age · Middle-earth</button>
+    </div>
+  </div>
+
+  <article id="card" class="sheet" hidden aria-live="polite"></article>
+
+  <div id="legend" class="sheet">
+    <span><svg width="16" height="16" viewBox="-8 -8 16 16" aria-hidden="true"><circle r="5" fill="#8c2f1b" stroke="#b88a2c" stroke-width="1.6"/></svg>City map: click to open it</span>
+    <span><svg width="16" height="16" viewBox="-8 -8 16 16" aria-hidden="true"><circle r="3.2" fill="#efe3c4" stroke="#6b5640" stroke-width="1.1"/></svg>Not built yet</span>
+    <span class="note">Drawn after Tolkien's maps; positions are approximate.</span>
+  </div>
+
+  <div id="controls">
+    <button class="sheet" id="zin" aria-label="Zoom in">+</button>
+    <button class="sheet" id="zout" aria-label="Zoom out">&minus;</button>
+    <button class="sheet" id="zreset" aria-label="Show the whole map">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
+  <div id="tip" class="sheet" hidden></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* The city maps built so far. Add a city here when it is published. */
+const CITY_URL={
+  gondolin:"https://claude.ai/artifact/S224yYEAXsBDd5kg1pQkfd",
+  edoras:"https://claude.ai/artifact/HgmBDQSjrahbirnWnFdQo3",
+  "helms-deep":"https://claude.ai/artifact/1Faiw37b9b54XUMFUXwSak",
+  "tol-sirion":"https://claude.ai/artifact/MHA4SbKLCqAc94zUvEoWjB",
+  aldburg:"https://claude.ai/artifact/Ara8vj5DDY9j391gUxSn87",
+  "barad-eithel":"https://claude.ai/artifact/WGYCZF91pRa9Bh4L6HfHb2",
+  "dor-lomin":"https://claude.ai/artifact/M5cQuEg9Y88F672etT37Wh",
+  "mithrim":"https://claude.ai/artifact/QorzE6oLgA7Pxmatzy7C9g",
+  nargothrond:"https://claude.ai/artifact/49qYVDh32vhyXzMM2inH3r",
+};
+
+/* ---------- the two maps (coordinates in a 1000 x 820 sheet; north is up) ---------- */
+const AGES={
+  "middle-earth":{
+    title:"The West of Middle-earth", sub:"at the end of the Third Age",
+    blurb:"Rohan and Gondor, the Shire and the Misty Mountains, as they stood in the War of the Ring.",
+    land:[[95,0],[90,60],[80,120],[95,180],[85,230],[120,262],[150,276],[178,292],[150,300],[120,320],[110,360],[140,400],[175,440],[205,480],[235,520],[270,560],[300,600],[318,650],[330,700],[316,730],[350,736],[390,722],[430,735],[470,745],[505,760],[522,746],[540,768],[580,788],[620,790],[652,770],[662,758],[690,770],[722,790],[760,808],[800,820],[1000,820],[1000,0]],
+    islands:[],
+    lakes:[ {c:[915,345],r:[62,40]}, {c:[728,172],r:[5,13]}, {c:[845,712],r:[30,15]}, {c:[592,512],r:[6,10]} ],
+    mountains:[
+      {pts:[[118,40],[128,120],[138,200],[148,255]],s:1},{pts:[[142,312],[150,380],[160,432]],s:.9},           // Ered Luin
+      {pts:[[470,58],[478,140],[470,220],[462,300],[470,380],[462,450],[452,505]],s:1.25},                     // Misty Mountains
+      {pts:[[500,70],[580,62],[660,70],[742,64]],s:1},                                                         // Grey Mountains
+      {pts:[[805,112],[865,104]],s:.9},                                                                        // Iron Hills
+      {pts:[[330,706],[370,672],[410,642],[450,608],[476,590],[512,612],[560,622],[610,628],[650,636]],s:1.15}, // White Mountains
+      {pts:[[706,560],[700,620],[706,680],[722,740],[762,760],[832,760]],s:1},                                 // Ephel Dúath
+      {pts:[[708,553],[780,543],[860,549],[940,560]],s:1},                                                     // Ered Lithui
+      {pts:[[628,520],[650,515]],s:.6},                                                                        // Emyn Muil
+    ],
+    peaks:[[758,622,1.8,"Orodruin"]],
+    forests:[
+      {pts:[[560,150],[700,140],[706,260],[690,420],[622,440],[560,400],[556,260]],g:9},                        // Mirkwood
+      {pts:[[468,505],[526,500],[532,546],[490,556],[464,535]],g:7},                                            // Fangorn
+      {pts:[[276,310],[302,305],[306,326],[279,331]],g:6},                                                      // Old Forest
+      {pts:[[500,400],[536,395],[541,431],[505,436]],g:6,gold:true},                                            // Lothlórien
+      {pts:[[618,604],[640,600],[642,618],[620,621]],g:6},                                                      // Drúadan Forest
+      {pts:[[410,270],[436,268],[438,286],[412,288]],g:6},                                                      // Trollshaws
+    ],
+    rivers:[
+      {pts:[[585,80],[590,160],[585,240],[580,320],[590,380],[600,440],[625,490],[650,535],[660,580],[668,620],[675,642],[680,690],[690,720],[670,748],[660,764]],name:"Anduin",at:[600,300]},
+      {pts:[[452,515],[440,560],[430,600],[400,650],[360,692],[352,722]],name:"Isen",at:[418,622]},
+      {pts:[[496,540],[560,560],[620,578],[655,570]],name:"Entwash",at:[575,572]},
+      {pts:[[290,220],[278,300],[266,360],[250,420],[228,474]],name:"Brandywine",at:[248,385]},
+      {pts:[[468,250],[420,330],[372,420],[320,490],[262,540]],name:"Greyflood",at:[360,445]},
+      {pts:[[205,200],[170,258],[152,284]],name:"Lune",at:[176,240]},
+      {pts:[[722,148],[736,240],[800,330],[858,342]],name:"Celduin",at:[770,285]},
+      {pts:[[700,160],[640,190]],name:"",at:null},
+    ],
+    regions:[["Lindon",95,222,13],["The Shire",218,282,10],["Eriador",320,385,22],["Arnor",310,180,13],["Enedwaith",340,555,13],
+      ["Rhovanion",660,110,15],["Mirkwood",630,300,14],["Rohan",560,548,20],["Gondor",590,708,20],["Mordor",820,650,22],["Rhûn",930,260,18],["Harad",900,800,15]],
+    seas:[["Belegaer · The Great Sea",48,560,15,-90],["Bay of Belfalas",585,808,11,0]],
+    places:[
+      {id:"edoras",name:"Edoras",x:535,y:598,city:"edoras",kicker:"Rohan",text:"The royal town of Rohan, with the golden hall Meduseld on its green hill."},
+      {id:"aldburg",name:"Aldburg",x:572,y:611,city:"aldburg",kicker:"Rohan",text:"The old town of the Folde, where Eorl the Young had his house before Edoras was built; in the War of the Ring, the home of Éomer."},
+      {id:"helms-deep",name:"Helm's Deep",x:478,y:580,city:"helms-deep",kicker:"Rohan",text:"The Hornburg and the Deeping Wall in a gorge of the White Mountains, refuge of the Westfold."},
+      {id:"minas-tirith",name:"Minas Tirith",x:654,y:640,kicker:"Gondor",text:"The city of Gondor, built in seven walled circles against Mount Mindolluin."},
+      {id:"osgiliath",name:"Osgiliath",x:677,y:643,minor:true,kicker:"Gondor",text:"The old capital of Gondor astride the Anduin, in ruins by the end of the Third Age."},
+      {id:"minas-morgul",name:"Minas Morgul",x:707,y:654,kicker:"Mordor",text:"Once Minas Ithil, the Tower of the Moon; taken by the Nazgûl and turned to evil."},
+      {id:"barad-dur",name:"Barad-dûr",x:802,y:600,kicker:"Mordor",text:"The Dark Tower of Sauron."},
+      {id:"morannon",name:"The Black Gate",x:722,y:562,minor:true,kicker:"Mordor",text:"The Morannon, the gate of Mordor across the pass of Cirith Gorgor."},
+      {id:"dol-amroth",name:"Dol Amroth",x:520,y:742,kicker:"Gondor",text:"The seat of the Princes of Dol Amroth on the coast of Belfalas."},
+      {id:"pelargir",name:"Pelargir",x:690,y:716,minor:true,kicker:"Gondor",text:"The ancient haven of Gondor on the Anduin, where Aragorn took the ships of the Corsairs."},
+      {id:"dunharrow",name:"Dunharrow",x:520,y:622,minor:true,kicker:"Rohan",text:"The mountain refuge of the Rohirrim above Harrowdale, reached by a road of hairpin bends."},
+      {id:"isengard",name:"Isengard",x:452,y:516,kicker:"Nan Curunír",text:"Saruman's ring of stone around the tower of Orthanc."},
+      {id:"rivendell",name:"Rivendell",x:448,y:284,kicker:"Eriador",text:"Imladris, Elrond's house in a hidden valley at the feet of the Misty Mountains."},
+      {id:"moria",name:"Moria",x:458,y:400,kicker:"The Misty Mountains",text:"Khazad-dûm, the great Dwarf-realm under the Misty Mountains."},
+      {id:"caras-galadhon",name:"Caras Galadhon",x:522,y:416,kicker:"Lothlórien",text:"The city of the Galadhrim among the mallorn-trees of Lothlórien."},
+      {id:"bree",name:"Bree",x:300,y:300,kicker:"Eriador",text:"A village of Men and Hobbits where the great roads meet, with the inn of the Prancing Pony."},
+      {id:"hobbiton",name:"Hobbiton",x:215,y:298,kicker:"The Shire",text:"Bilbo's and Frodo's home at Bag End."},
+      {id:"grey-havens",name:"The Grey Havens",x:176,y:291,kicker:"Lindon",text:"Mithlond, Círdan's havens on the Gulf of Lune, from which the Elves sailed into the West."},
+      {id:"weathertop",name:"Weathertop",x:360,y:298,minor:true,kicker:"Eriador",text:"Amon Sûl, the hill where Frodo was wounded by the Witch-king."},
+      {id:"fornost",name:"Fornost",x:276,y:232,minor:true,kicker:"Arnor",text:"Norbury of the Kings, a ruined capital of the North-kingdom."},
+      {id:"erebor",name:"Erebor",x:720,y:126,kicker:"Rhovanion",text:"The Lonely Mountain, the Dwarf-kingdom under the Mountain."},
+      {id:"dale",name:"Dale",x:731,y:140,minor:true,kicker:"Rhovanion",text:"The town of Men below the Lonely Mountain, rebuilt after the death of Smaug."},
+      {id:"esgaroth",name:"Lake-town",x:728,y:172,minor:true,kicker:"Rhovanion",text:"Esgaroth, built on stilts out on the Long Lake."},
+      {id:"thranduil",name:"Thranduil's Halls",x:662,y:158,minor:true,kicker:"Mirkwood",text:"The cave-palace of the Elvenking in northern Mirkwood."},
+      {id:"dol-guldur",name:"Dol Guldur",x:600,y:408,kicker:"Mirkwood",text:"The Necromancer's fortress in southern Mirkwood."},
+    ],
+  },
+  "beleriand":{
+    painted:true,                                                                                                 // drawn in the painted style, not the inked one
+    title:"Map of Beleriand", sub:"and the Lands to the North",
+    blurb:"The lands of the Elves and Men who fought Morgoth, before Beleriand sank beneath the sea at the end of the First Age.",
+    // Every position below is measured on the user's painted reference map (1280 × 949 px); fromRef() scales it onto the sheet.
+    // A third number on a coast point sets how rough the coast is from that point on (low inside the narrow Firth of Drengist).
+    ref:[1000/1280,820/949], cartouche:[752,862], compass:[1110,85],
+    land:[[30,-280],[30,0],[45,30],[70,60],[95,90],[112,115],[128,145],[140,168],                                          // Lammoth
+      [148,180,.05],[200,175,.05],[245,169,.05],[285,165,.05],[250,176,.05],[205,183,.05],[160,192,.05],                  // the Firth of Drengist
+      [146,203],[135,228],[122,250],[108,272],[96,292],[86,308],[76,322],[66,338],[68,356],[80,372],[92,392],             // Nevrast, Mount Taras
+      [100,412],[104,432],[106,452],[106,462,.05],[128,474,.05],[110,486],[106,505],[110,528],[120,548],[136,560],         // the Falas, Brithombar
+      [160,560],[195,556],[228,553],[244,557,.05],[248,564],                                                              // Eglarest
+      [262,585],[282,605],[305,620],[330,628],[338,650],[343,680],[347,710],[350,740],[352,758],[343,776],                // the long west shore of Arvernien, Cape Balar
+      [362,772],[390,760],[420,752],[455,748],[490,744],[520,741],[534,739],[548,733],[558,745],                          // the Mouths of Sirion
+      [566,765],[576,795],[586,830],[590,870],[586,905],[598,949],[600,1300],[1700,1300],[1700,-280]],                    // the east shore of the Bay of Balar
+    islands:[[[312,935],[330,915],[360,893],[395,872],[425,857],[440,858],[442,872],[425,890],[395,908],[360,925],[330,940]],  // Balar
+      [[490,812],[502,806],[512,814],[508,828],[495,830]], [[48,212],[60,203],[78,206],[82,218],[70,226],[52,224]]],
+    lakes:[ {c:[435,130],r:[30,7],rot:-28}, {c:[1130,282],r:[10,7]}, {c:[745,180],r:[5,4]}, {c:[265,262],r:[22,6],rot:-5},
+      {c:[395,268],r:[6,4]}, {c:[585,488],r:[8,5]}, {c:[597,498],r:[5,4]} ],                                              // Mithrim, Helevorn, Aeluin, Linaewen, Ivrin, Aelin-uial
+    tints:[ {c:[730,80],r:[240,55],col:"#a08463",o:.4}, {c:[1100,620],r:[100,260],col:"#8fbf6a",o:.4},
+      {c:[340,150],r:[150,80],col:"#d7c27f",o:.35}, {c:[200,270],r:[90,40],col:"#9fc278",o:.35} ],
+    mountains:[
+      {pts:[[600,8],[660,4],[720,8],[790,4],[860,8]],s:.8,c:"dark"},                                                     // the feet of Ered Engrin
+      {pts:[[185,10],[205,55],[222,100],[240,140],[265,163],[305,165]],s:1,c:"purple"},                                  // Ered Lómin
+      {pts:[[495,0],[510,50],[522,100],[530,150],[528,190],[500,210],[460,228],[425,245],[395,262]],s:1.1,c:"wethrin"},  // Ered Wethrin
+      {pts:[[380,185],[420,195],[465,200]],s:.9,c:"wethrin"},                                                             // the Mountains of Mithrim
+      {pts:[[240,195],[280,212],[320,228],[360,245],[395,262]],s:.9,c:"wethrin"},                                         // between Dor-lómin and Nevrast
+      {pts:[[105,312],[160,302],[220,298],[290,292],[350,282],[392,268]],s:.6,c:"brown"},                                  // the southern wall of Nevrast
+      {pts:[[612,240],[660,246],[720,244],[780,238],[840,236],[880,240],[910,250]],s:1,c:"gold"},                       // the southern cliffs of Dorthonion, above Ered Gorgoroth
+      {pts:[[1200,135],[1190,200],[1180,280],[1178,360],[1185,440],[1190,520],[1195,600],[1205,680],[1215,760]],s:1.15,c:"purple"},  // Ered Luin
+      {pts:[[1090,245],[1130,240],[1165,250]],s:.9,c:"purple"},                                                          // Mount Rerir
+      {pts:[[495,515],[550,520],[620,545],[700,570],[780,595],[840,612]],s:.5,c:"brown"},                                  // Andram, the Long Wall
+      {pts:[[365,488],[400,478],[440,482],[480,488],[500,494]],s:.55,c:"brown"},                                          // the hills of Taur-en-Faroth
+    ],
+    hills:[{pts:[[600,165],[640,140],[700,125],[790,120],[880,132],[908,170],[902,215],[862,232],[780,236],[700,238],[640,236],[606,215]],g:17}],  // the highland of Dorthonion
+    rings:[{c:[575,205],r:32,s:.85,col:"ring"}],                                                                          // the Echoriath around Gondolin
+    peaks:[[700,26,1.8,"","black"],[714,20,2.1,"","black"],[728,28,1.7,"","black"],                                     // Thangorodrim
+      [92,326,1.1,"","purple"],[532,398,.8,"","brown"],[1145,438,1.3,"","purple"],[925,605,.8,"","brown"]],               // Taras, Amon Rûdh, Dolmed, Amon Ereb
+    forests:[
+      {pts:[[608,150],[662,142],[672,186],[640,196],[612,190]],g:6.5,pine:true,sparse:.55},                              // pines on the western heights of Dorthonion
+      {pts:[[838,140],[858,134],[873,170],[868,214],[842,216],[832,176]],g:3.4,pine:true,dark:true},                       // the dark pines of Taur-nu-Fuin by Ladros
+      {pts:[[615,305],[700,298],[760,300],[740,335],[700,355],[640,370],[612,375]],g:5.5},                               // Neldoreth
+      {pts:[[612,388],[700,376],[745,362],[790,330],[808,350],[800,410],[780,440],[720,460],[650,468],[610,462]],g:5.5},   // Region
+      {pts:[[505,285],[545,280],[585,300],[598,340],[596,380],[560,382],[520,376],[500,340]],g:5.5},                       // Brethil
+      {pts:[[848,325],[890,320],[898,360],[860,372]],g:5,dark:true},                                                       // Nan Elmoth
+      {pts:[[600,650],[660,625],[740,612],[820,622],[890,640],[925,685],[930,760],[915,850],[905,965],[590,965],[575,860],[575,760],[585,700]],g:6}, // Taur-im-Duinath
+      {pts:[[395,698],[440,690],[470,700],[460,722],[410,725]],g:5.5,birch:true},                                         // the birchwoods of Nimbrethil
+      {pts:[[515,605],[560,600],[570,640],[540,660],[512,640]],g:5},                                                       // Nan-tathren
+    ],
+    rivers:[
+      {parts:[[[548,108],[565,138],[558,172],[530,205],[528,245],[548,272],[578,300],[597,345],[605,385],[598,420],[592,455],[585,490],[570,510],[556,522]],
+              [[565,542],[558,580],[553,620],[550,660],[551,700],[548,733]]],name:"Sirion",at:[500,240],w:2.2},                 // under the earth from the Falls to the Gates
+      {pts:[[549,712],[540,726],[534,739]],name:"",at:null,w:1.1}, {pts:[[550,712],[556,730],[558,745]],name:"",at:null,w:1.1}, // the delta
+      {pts:[[395,272],[392,330],[392,385],[410,430],[440,470],[452,520],[462,580],[480,615],[520,638],[551,650]],name:"Narog",at:[462,545],w:1.8},
+      {pts:[[345,268],[352,320],[356,370],[362,420],[392,452],[428,463]],name:"Ginglith",at:[300,330]},
+      {pts:[[245,330],[262,380],[266,430],[262,480],[254,520],[244,557]],name:"Nenning",at:[272,420]},
+      {pts:[[195,360],[175,400],[158,440],[128,474]],name:"Brithon",at:[190,402]},
+      {pts:[[420,248],[440,272],[458,300],[468,330],[490,360],[520,380],[560,386],[602,386]],name:"Teiglin",at:[462,290]},
+      {pts:[[478,215],[482,250],[478,290],[468,328]],name:"Malduin",at:[486,262]},
+      {pts:[[640,252],[625,290],[614,330],[606,372]],name:"Mindeb",at:[624,305]},
+      {pts:[[760,245],[740,280],[730,310],[735,345],[700,365],[650,375],[606,388]],name:"Esgalduin",at:[745,300]},
+      {pts:[[805,225],[800,300],[812,330],[805,365],[795,400],[785,435],[750,460],[700,472],[640,478],[596,484]],name:"Aros",at:[700,490],w:1.6},
+      {pts:[[905,225],[890,270],[865,315],[835,360],[818,395],[796,420]],name:"Celon",at:[800,345]},
+      {pts:[[955,232],[982,265],[995,300],[1010,330]],name:"Little Gelion",at:[925,292]},
+      {pts:[[1145,248],[1100,262],[1050,272],[1020,300],[1010,330]],name:"Greater Gelion",at:[1030,262]},
+      {pts:[[1010,330],[1005,400],[1030,470],[1040,550],[1030,600],[990,670],[955,750],[940,850],[925,960]],name:"Gelion",at:[1012,420],w:2.4},
+      {pts:[[1185,490],[1100,522],[1040,535]],name:"Ascar",at:[1060,550]},
+      {pts:[[1180,560],[1100,580],[1035,592]],name:"Thalos",at:[1080,575]},
+      {pts:[[1190,615],[1100,638],[1000,650]],name:"Legolin",at:[1050,635]},
+      {pts:[[1195,685],[1060,712],[965,720]],name:"Brilthor",at:[1010,708]},
+      {pts:[[1200,745],[1050,770],[948,782]],name:"Duilwen",at:[1000,768]},
+      {pts:[[1210,800],[1150,840],[1000,860],[938,880]],name:"Adurant",at:[1010,852]},
+      {pts:[[655,185],[620,165],[588,150]],name:"",at:null},                                                               // Rivil, into the Fen of Serech
+    ],
+    roads:[{pts:[[1205,476],[1150,495],[1080,505],[1015,518],[950,470],[890,375]]}],                                      // the Dwarf-road over Sarn Athrad
+    // [name, x, y, size, color, halo, rotation]
+    regions:[["Hithlum",330,100,18,"#2f5b8c"],["Mithrim",470,165,9,"#2f5b8c"],["Lammoth",135,112,9,"#a3361f"],
+      ["Nevrast",175,272,10,"#a3361f","",-25],["Falas",200,470,13,"#a3361f","",58],["West Beleriand",345,470,12,"#2f5b8c","",72],
+      ["Talath Dirnen",455,405,7,"#6b5640","",35],["Doriath",700,370,17,"#a3361f","",-20],["Taur-nu-Fuin",700,180,11,"#3b2a1a"],
+      ["Anfauglith",730,72,15,"#7a2a18"],["Lothlann",1060,165,14,"#2f5b8c"],["Himlad",865,275,9,"#2f5b8c"],
+      ["Thargelion",1088,400,11,"#a3361f","",90],["East Beleriand",820,520,15,"#2f5b8c","",-30],["Estolad",875,400,8,"#a3361f"],
+      ["Ossiriand",1115,660,13,"#2f6b3a","",90],["Arvernien",450,712,10,"#2f5b8c","",18],["Taur-im-Duinath",755,700,11,"#f2e6c2","#2f4a26"],
+      ["Dimbar",592,305,7.5,"#6b5640","",90],["Andram",705,565,8,"#6b4a2a","",18]],
+    // [name, x, y, size, color, anchor, rotation]
+    names:[["(Ard-galen)",700,104,7],["Thangorodrim",738,20,7,"#3b2a1a","start"],["Firth of Drengist",232,160,6,"#2f5b8c","",-6],["Cirith Ninniach",310,150,6],
+      ["Mount Taras",92,345,6.5],["Linaewen",265,250,6],["Marshes of Nevrast",262,287,6],["Eithel Ivrin",400,284,6.5,"","start"],
+      ["Fen of Serech",590,138,6.5],["Rivil's Well",650,196,6.5],["(Dorthonion)",700,198,7],["Ladros",790,150,7],["Aeluin",755,184,6,"","start"],
+      ["Pass of Anach",622,226,6,"","",-55],["Crissaegrim",575,252,6.5],["Ered Gorgoroth",690,264,7.5,"#6b4a2a"],["Nan Dungortheb",690,284,7.5],["Dor Dínen",782,266,6.5],["Pass of Aglon",848,236,6.5],
+      ["March of Maedhros",1015,216,7],["Mount Rerir",1122,232,6.5],["Lake Helevorn",1130,302,6.5],["Mount Dolmed",1130,452,6.5,"","end"],
+      ["Dwarf-road",1110,486,6.5,"#7a4a2a"],["Sarn Athrad",1003,527,6.5,"","end"],["Tol Galen",1150,834,6.5],
+      ["Crossings of Teiglin",470,324,6.5],["Brithiach",530,278,6],["Tumhalad",378,392,6.5],["Aelin-uial",604,500,6.5,"","start"],
+      ["Falls of Sirion",548,512,6.5,"","end"],["Gates of Sirion",574,548,6.5,"","start"],["Nan-tathren",540,596,6.5],["Taur-en-Faroth",432,520,6.5],
+      ["Mouths of Sirion",568,742,6.5,"","start"],["Cape Balar",374,748,6.5,"","start"],["Birchwoods of Nimbrethil",432,738,6],
+      ["Amon Ereb",935,620,6.5,"","start"],["Ramdal",835,622,6.5],["Forest of Neldoreth",680,322,6.5,"#f2e6c2"],["Forest of Region",720,428,6.5,"#f2e6c2","",-20],
+      ["Nan Elmoth",873,382,6.5],["Forest of Brethil",548,345,6,"#f2e6c2"]],
+    // [name, x, y, size, rotation] — "v" writes the letters one under another, stepping by dx, dy
+    seas:[["Belegaer",35,405,24,"v",25,48],["Bay of Balar",452,812,9,35]],
+    places:[
+      {id:"gondolin",name:"Gondolin",x:575,y:208,city:"gondolin",kicker:"The Echoriath",text:"Turgon's hidden city on Amon Gwareth, in the plain of Tumladen within the Encircling Mountains."},
+      {id:"nargothrond",name:"Nargothrond",x:428,y:468,city:"nargothrond",kicker:"West Beleriand",text:"Finrod Felagund's halls delved beside the river Narog."},
+      {id:"menegroth",name:"Menegroth",x:735,y:352,kicker:"Doriath",text:"The Thousand Caves of Thingol and Melian."},
+      {id:"vinyamar",name:"Vinyamar",x:112,y:300,minor:true,kicker:"Nevrast",text:"Turgon's first home, by the sea in Nevrast, before he built Gondolin."},
+      {id:"brithombar",name:"Brithombar",x:138,y:470,minor:true,kicker:"The Falas",text:"One of the two havens of Círdan on the coast of the Falas."},
+      {id:"eglarest",name:"Eglarest",x:236,y:546,minor:true,kicker:"The Falas",text:"The southern haven of Círdan on the Falas."},
+      {id:"angband",name:"Angband",x:722,y:44,kicker:"The North",text:"Morgoth's fortress under the Iron Mountains, with Thangorodrim piled above it."},
+      {id:"tol-sirion",name:"Tol Sirion",x:529,y:212,city:"tol-sirion",left:true,kicker:"The Pass of Sirion",text:"Finrod's tower Minas Tirith on the isle in the Pass of Sirion, later taken by Sauron."},
+      {id:"himring",name:"Himring",x:925,y:215,kicker:"East Beleriand",text:"The hill-fortress of Maedhros."},
+      {id:"amon-rudh",name:"Amon Rûdh",x:532,y:404,minor:true,kicker:"West Beleriand",text:"The bald hill where Túrin dwelt with Mîm the Petty-dwarf."},
+      {id:"havens-sirion",name:"Havens of Sirion",x:540,y:722,kicker:"The Mouths of Sirion",text:"Where the survivors of Gondolin and Doriath gathered at the end of the First Age."},
+      {id:"balar",name:"Isle of Balar",x:378,y:900,minor:true,kicker:"The Bay of Balar",text:"Where Círdan and Gil-galad took refuge after the havens of the Falas fell."},
+      {id:"mithrim",name:"Lake Mithrim",x:437,y:131,city:"mithrim",left:true,kicker:"Fingolfin's town",text:"Fingolfin's town on the north shore of the lake, where his host dwelt after crossing the Grinding Ice."},
+      {id:"dor-lomin",name:"Dor-lómin",x:338,y:218,city:"dor-lomin",kicker:"The House of Húrin",text:"The land of the House of Hador in Hithlum, and the house of Húrin and Morwen, where Túrin was born."},
+      {id:"barad-eithel",name:"Barad Eithel",x:548,y:108,city:"barad-eithel",kicker:"Eithel Sirion",text:"The Tower of the Well, Fingolfin's and then Fingon's fortress above the springs of Sirion on the eastern face of Ered Wethrin."},
+      {id:"belegost",name:"Belegost",x:1212,y:452,minor:true,kicker:"Ered Luin",text:"Gabilgathol, the Mighty Fortress, a Dwarf-city of the Blue Mountains."},
+      {id:"nogrod",name:"Nogrod",x:1214,y:478,minor:true,kicker:"Ered Luin",text:"Tumunzahar, the Hollowbold, the Dwarf-city whose smiths made the Nauglamír."},
+    ],
+  },
+};
+// an age traced from a reference map keeps that map's pixel positions; scale them onto the sheet once
+function fromRef(A){
+  const [sx,sy]=A.ref, P=p=>p.length>2?[p[0]*sx,p[1]*sy,...p.slice(2)]:[p[0]*sx,p[1]*sy], L=a=>a.map(P);
+  A.land=L(A.land); A.islands=A.islands.map(L);
+  [...A.lakes,...(A.tints||[])].forEach(l=>{ l.c=P(l.c); l.r=[l.r[0]*sx,l.r[1]*sy]; });
+  A.mountains.forEach(m=>{ m.pts=L(m.pts); }); (A.rings||[]).forEach(r=>{ r.c=P(r.c); r.r*=sx; });
+  A.peaks=L(A.peaks); A.forests.forEach(f=>{ f.pts=L(f.pts); }); (A.hills||[]).forEach(h=>{ h.pts=L(h.pts); }); (A.roads||[]).forEach(r=>{ r.pts=L(r.pts); });
+  A.rivers.forEach(r=>{ if(r.pts) r.pts=L(r.pts); if(r.parts) r.parts=r.parts.map(L); if(r.at) r.at=P(r.at); });
+  ["regions","names","seas"].forEach(k=>(A[k]||[]).forEach(e=>{ e[1]*=sx; e[2]*=sy; if(e[4]==="v"){ e[5]*=sx; e[6]*=sy; } }));
+  A.places.forEach(p=>{ p.x=Math.round(p.x*sx); p.y=Math.round(p.y*sy); });
+  if(A.cartouche) A.cartouche=P(A.cartouche); if(A.compass) A.compass=P(A.compass);
+  delete A.ref;
+}
+Object.values(AGES).forEach(A=>{ if(A.ref) fromRef(A); });
+
+/* ---------- drawing ---------- */
+const svg=document.getElementById("map"), NS="http://www.w3.org/2000/svg", W=1000, H=820;
+svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+// paper grain: a small tile of noise repeated over the page (an SVG turbulence filter rendered in visible tiles)
+(function(){ const c=document.createElement("canvas"); c.width=c.height=256; const g=c.getContext("2d"), im=g.createImageData(256,256), r=mulberry32(7);
+  for(let i=0;i<im.data.length;i+=4){ const v=r(); im.data[i]=115; im.data[i+1]=82; im.data[i+2]=46; im.data[i+3]=Math.round(v*v*115); }
+  g.putImageData(im,0,0); document.getElementById("paper").style.backgroundImage=`url(${c.toDataURL()})`; })();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const f1=n=>Math.round(n*10)/10;
+// break straight lines into a hand-drawn wobble
+function wobble(pts,rnd,step,amp,closed){
+  const out=[]; const n=pts.length, segs=closed?n:n-1;
+  for(let i=0;i<segs;i++){ const [x0,y0]=pts[i], [x1,y1]=pts[(i+1)%n], len=Math.hypot(x1-x0,y1-y0), k=Math.max(1,Math.round(len/step));
+    const nx=-(y1-y0)/(len||1), ny=(x1-x0)/(len||1);
+    for(let j=0;j<k;j++){ const t=j/k, d=(j===0?0:(rnd()-.5)*2*amp); out.push([x0+(x1-x0)*t+nx*d, y0+(y1-y0)*t+ny*d]); } }
+  if(!closed) out.push(pts[n-1]);
+  return out;
+}
+const poly=(pts,closed)=>"M"+pts.map(p=>f1(p[0])+","+f1(p[1])).join("L")+(closed?"Z":"");
+function smooth(pts){ // Catmull-Rom through the points, as cubic Béziers
+  let d="M"+f1(pts[0][0])+","+f1(pts[0][1]);
+  for(let i=0;i<pts.length-1;i++){ const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    d+="C"+f1(p1[0]+(p2[0]-p0[0])/6)+","+f1(p1[1]+(p2[1]-p0[1])/6)+" "+f1(p2[0]-(p3[0]-p1[0])/6)+","+f1(p2[1]-(p3[1]-p1[1])/6)+" "+f1(p2[0])+","+f1(p2[1]); }
+  return d;
+}
+function inside(pt,pts){ let c=false; for(let i=0,j=pts.length-1;i<pts.length;j=i++){ const [xi,yi]=pts[i],[xj,yj]=pts[j];
+  if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) c=!c; } return c; }
+function peak(x,y,s,rnd){ // one inked mountain, shaded with hatching on the eastern flank
+  const w=7.5*s*(.8+rnd()*.4), h=7.5*s*(.8+rnd()*.5), tx=x+(rnd()-.5)*2*s;
+  let hatch=""; for(let k=1;k<=3;k++){ const f=k/4; hatch+=`M${f1(tx+w*f*.25)},${f1(y-h+h*f*.6)}L${f1(tx+w*(.25+f*.55))},${f1(y-.5)}`; }
+  return `<path class="peak" d="M${f1(x-w)},${f1(y)}L${f1(tx)},${f1(y-h)}L${f1(x+w)},${f1(y)}"/><path class="hatch" d="${hatch}"/>`;
+}
+function placesSVG(A){ // red seals for built cities, plain dots for the rest
+  return A.places.map(p=>{
+    const built=p.city&&CITY_URL[p.city];
+    return `<g class="place ${built?"built":"soon"}${p.minor&&!built?" minor":""}" data-id="${p.id}" tabindex="0" role="button" aria-label="${esc(p.name)}${built?", city map available":""}">
+      <circle class="hit" cx="${p.x}" cy="${p.y}" r="10"/>
+      ${built?`<circle class="ring" cx="${p.x}" cy="${p.y}" r="7"/><circle class="seal" cx="${p.x}" cy="${p.y}" r="5"/>`:`<circle class="dot" cx="${p.x}" cy="${p.y}" r="2.8"/>`}
+      <text class="plabel ${built?"built":"soon"}" x="${p.left?p.x-5:p.x+(built?8:5)}" y="${p.y+3.5}"${p.left?' text-anchor="end"':""}>${esc(p.name)}</text></g>`; }).join("");
+}
+
+/* The painted style (Beleriand): a green sea ringed with white contour lines, warm land, colored ranges,
+   dense green woods, and big names in red and blue, after the painted map of Beleriand. */
+const PAINT={ dark:["#2a2327","#7a6a68"], wethrin:["#33282a","#8f7a72"], purple:["#47335c","#a08abb"],
+  black:["#1d1719","#5a4d4f"], brown:["#5c4330","#ad8f68"], ring:["#3a2e33","#93838a"], gold:["#6e4a22","#d6b067"] };
+const LEAVES={ wood:["#4d7c3a","#5d8c43","#6e9b4c","#41702f"], dark:["#2f5a2c","#3a6633","#294d26"],
+  pine:["#2d4630","#365538","#26402b"], darkpine:["#1c2e1f","#243a27","#15241a"], birch:["#9dbb6a","#b5c97a","#8aab5c"] };
+function peakFaces(x,y,s,rnd){ // a lit western face and a shaded eastern one, as path data
+  const w=6.5*s*(.8+rnd()*.4), h=8.5*s*(.8+rnd()*.5), tx=x+(rnd()-.5)*2*s, m=tx+w*.18;
+  return [`M${f1(x-w)},${f1(y)}L${f1(tx)},${f1(y-h)}L${f1(m)},${f1(y)}Z`, `M${f1(tx)},${f1(y-h)}L${f1(x+w)},${f1(y)}L${f1(m)},${f1(y)}Z`];
+}
+function simplify(pts,tol){ // Douglas–Peucker: drop points that stray less than tol from the line
+  const keep=new Uint8Array(pts.length), st=[[0,pts.length-1]]; keep[0]=keep[pts.length-1]=1;
+  while(st.length){ const [a,b]=st.pop(), [x0,y0]=pts[a], [x1,y1]=pts[b], L=Math.hypot(x1-x0,y1-y0)||1; let md=0, mi=-1;
+    for(let i=a+1;i<b;i++){ const d=Math.abs((x1-x0)*(y0-pts[i][1])-(x0-pts[i][0])*(y1-y0))/L; if(d>md){ md=d; mi=i; } }
+    if(md>tol){ keep[mi]=1; st.push([a,mi],[mi,b]); } }
+  return pts.filter((_,i)=>keep[i]);
+}
+function fractal(pts,rnd,minLen,rough){ // midpoint displacement: detail at every scale, while the given points stay put
+  const out=[pts[0]], n=pts.length, onSheet=p=>p[0]>-20&&p[0]<W+20&&p[1]>-20&&p[1]<H+20;
+  const sub=(a,b,depth,r)=>{ const len=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(len<minLen||depth>9){ out.push(b); return; }
+    const d=(rnd()-.5)*2*Math.min(len*r,8), m=[(a[0]+b[0])/2-(b[1]-a[1])/len*d,(a[1]+b[1])/2+(b[0]-a[0])/len*d];
+    sub(a,m,depth+1,r); sub(m,b,depth+1,r); };
+  for(let i=0;i<n;i++){ const a=pts[i], b=pts[(i+1)%n]; if(onSheet(a)&&onSheet(b)) sub(a,b,0,a[2]??rough); else out.push(b); }
+  return out;
+}
+/* The sea, the shore wash and the land's colors are baked once into a single picture from a distance field
+   (how far each point lies from the coast), and the contour lines are traced from the same field as thin lines.
+   Drawing that is far cheaper than the ~100 wide strokes of the coast it replaces. */
+function edt(mask,w,h){ // squared distance from each cell to the nearest masked cell (Felzenszwalb & Huttenlocher)
+  const n=Math.max(w,h), f=new Float64Array(n), d=new Float64Array(n), v=new Int32Array(n), z=new Float64Array(n+1), out=new Float64Array(w*h);
+  for(let i=0;i<w*h;i++) out[i]=mask[i]?0:1e20;
+  const line=len=>{ let k=0; v[0]=0; z[0]=-1e20; z[1]=1e20;
+    for(let q=1;q<len;q++){ let s=((f[q]+q*q)-(f[v[k]]+v[k]*v[k]))/(2*q-2*v[k]);
+      while(s<=z[k]){ k--; s=((f[q]+q*q)-(f[v[k]]+v[k]*v[k]))/(2*q-2*v[k]); }
+      k++; v[k]=q; z[k]=s; z[k+1]=1e20; }
+    k=0; for(let q=0;q<len;q++){ while(z[k+1]<q) k++; d[q]=(q-v[k])*(q-v[k])+f[v[k]]; } };
+  for(let x=0;x<w;x++){ for(let y=0;y<h;y++) f[y]=out[y*w+x]; line(h); for(let y=0;y<h;y++) out[y*w+x]=d[y]; }
+  for(let y=0;y<h;y++){ for(let x=0;x<w;x++) f[x]=out[y*w+x]; line(w); for(let x=0;x<w;x++) out[y*w+x]=d[x]; }
+  return out;
+}
+const MS={1:["LB"],2:["BR"],3:["LR"],4:["TR"],5:["TL","BR"],6:["TB"],7:["TL"],8:["TL"],9:["TB"],10:["TR","LB"],11:["TR"],12:["LR"],13:["BR"],14:["LB"]};
+function isolines(D,w,h,step,count){ // marching squares: polylines where D = step, 2·step, … (grid units), grouped by level
+  const adj=new Map(), pt=new Map(), top=step*count;
+  const link=(a,b)=>{ (adj.get(a)||adj.set(a,[]).get(a)).push(b); (adj.get(b)||adj.set(b,[]).get(b)).push(a); };
+  for(let y=0;y<h-1;y++) for(let x=0;x<w-1;x++){
+    const i=y*w+x, a=D[i], b=D[i+1], c=D[i+w+1], d=D[i+w], lo=Math.min(a,b,c,d), hi=Math.max(a,b,c,d);
+    if(hi<step||lo>top) continue;
+    for(let L=Math.max(1,Math.ceil(lo/step));L<=count&&L*step<=hi;L++){ const t=L*step, code=(a>t?8:0)|(b>t?4:0)|(c>t?2:0)|(d>t?1:0);
+      if(code===0||code===15) continue;
+      const E={T:[i*2,()=>[x+(t-a)/(b-a),y]], R:[(i+1)*2+1,()=>[x+1,y+(t-b)/(c-b)]], B:[(i+w)*2,()=>[x+(t-d)/(c-d),y+1]], L:[i*2+1,()=>[x,y+(t-a)/(d-a)]]};
+      for(const [e1,e2] of MS[code]){ const k1=L*5e6+E[e1][0], k2=L*5e6+E[e2][0];
+        if(!pt.has(k1)) pt.set(k1,E[e1][1]()); if(!pt.has(k2)) pt.set(k2,E[e2][1]()); link(k1,k2); } } }
+  const seen=new Set(), out=[];
+  const walk=k0=>{ const line=[pt.get(k0)]; seen.add(k0); let k=k0;
+    for(;;){ const nx=(adj.get(k)||[]).find(n=>!seen.has(n)); if(nx===undefined) break; seen.add(nx); line.push(pt.get(nx)); k=nx; }
+    if((adj.get(k)||[]).includes(k0)&&line.length>2) line.push(line[0]);
+    out.push([Math.floor(k0/5e6),line]); };
+  adj.forEach((n,k)=>{ if(!seen.has(k)&&n.length===1) walk(k); });       // open lines first (they end at the grid's edge)
+  adj.forEach((n,k)=>{ if(!seen.has(k)) walk(k); });                       // then the closed rings
+  return out;
+}
+const chaikin=pts=>{ const o=[pts[0]]; for(let i=0;i<pts.length-1;i++){ const [x0,y0]=pts[i], [x1,y1]=pts[i+1]; o.push([x0*.75+x1*.25,y0*.75+y1*.25],[x0*.25+x1*.75,y0*.25+y1*.75]); } o.push(pts[pts.length-1]); return o; };
+function bakeSea(A,shapes){
+  const G=100, w=W+2*G, h=H+2*G;                                                     // one cell per sheet unit, with a margin round the sheet
+  const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const g=cv.getContext("2d");
+  g.translate(G,G); shapes.forEach(d=>g.fill(new Path2D(d))); g.setTransform(1,0,0,1,0,0);
+  const alpha=g.getImageData(0,0,w,h).data, land=new Uint8Array(w*h), sea=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){ land[i]=alpha[i*4+3]>127?1:0; sea[i]=1-land[i]; }
+  const toLand=edt(land,w,h), toSea=edt(sea,w,h);
+  const STOPS=[[0,[92,148,52]],[9,[146,188,92]],[22,[200,220,160]],[42,[224,232,202]],[1e9,[230,236,214]]];
+  const seaAt=d=>{ let i=0; while(d>STOPS[i+1][0]) i++; const [d0,c0]=STOPS[i], [d1,c1]=STOPS[i+1], t=Math.min(1,Math.max(0,(d-d0)/(d1-d0))); return c0.map((v,j)=>v+(c1[j]-v)*t); };
+  const LAND=[[0,[245,233,184]],[.55,[240,217,152]],[1,[227,169,95]]];
+  const tints=(A.tints||[]).map(t=>({cx:t.c[0],cy:t.c[1],rx:t.r[0]*1.25,ry:t.r[1]*1.25,o:t.o,c:[1,3,5].map(j=>parseInt(t.col.slice(j,j+2),16))}));
+  const mix=(c,o,a)=>{ c[0]+=(o[0]-c[0])*a; c[1]+=(o[1]-c[1])*a; c[2]+=(o[2]-c[2])*a; };
+  const img=g.createImageData(w,h), px=img.data, WASH=[127,174,116], RIM=[79,138,90];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=y*w+x, sx=x-G+.5, sy=y-G+.5; let c;
+    if(!land[i]) c=seaAt(Math.sqrt(toLand[i])-.5);
+    else { const t=Math.min(1,Math.max(0,((sx-150)*800+(sy-60)*740)/(800*800+740*740))), k=t<.55?0:1, u=(t-LAND[k][0])/(LAND[k+1][0]-LAND[k][0]);
+      c=LAND[k][1].map((v,j)=>v+(LAND[k+1][1][j]-v)*u);
+      for(const T of tints){ const q=Math.hypot((sx-T.cx)/T.rx,(sy-T.cy)/T.ry); if(q<1) mix(c,T.c,q<.6?T.o*(1-q/.6*.4):T.o*.6*(1-(q-.6)/.4)); }
+      const dl=Math.sqrt(toSea[i])-.5; if(dl<13) mix(c,WASH,.55*Math.pow(1-dl/13,.8)); if(dl<2.5) mix(c,RIM,.4*Math.min(1,2.5-dl)); }
+    px[i*4]=c[0]; px[i*4+1]=c[1]; px[i*4+2]=c[2]; px[i*4+3]=255; }
+  g.putImageData(img,0,0);
+  // contour lines every 5.4 units out to sea, in three shades that fade with distance
+  const D=new Float64Array(w*h); for(let i=0;i<w*h;i++) D[i]=land[i]?0:Math.sqrt(toLand[i]);
+  const shades=["","",""];
+  isolines(D,w,h,5.4,50).forEach(([L,line])=>{ if(line.length<4) return;
+    const pts=chaikin(simplify(line.map(([x,y])=>[x-G+.5,y-G+.5]),.3)), band=L<12?0:L<28?1:2;
+    shades[band]+="M"+pts.map(p=>f1(p[0])+","+f1(p[1])).join("L"); });
+  return `<image href="${cv.toDataURL("image/png")}" x="${-G}" y="${-G}" width="${w}" height="${h}" preserveAspectRatio="none"/>`+
+    shades.map((d,b)=>d?`<path d="${d}" fill="none" stroke="#4e6b50" stroke-opacity="${[.55,.45,.35][b]}" stroke-width=".75" stroke-linejoin="round"/>`:"").join("");
+}
+function drawPainted(key){
+  const A=AGES[key], rnd=mulberry32(key.length*977+13);
+  const coasts=[fractal(A.land,rnd,2.2,.22), ...A.islands.map(is=>fractal(is,rnd,1.4,.25))];
+  const shapes=coasts.map(c=>poly(c,true)), allD=shapes.join("");
+  let out=`<defs>
+    <linearGradient id="pHill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3e2a4"/><stop offset=".55" stop-color="#a9c47c"/><stop offset="1" stop-color="#86a862"/></linearGradient>
+    </defs>`;
+  // the sea, the land's colors and the shore wash: one baked picture plus traced contour lines
+  out+=`<rect x="-2000" y="-2000" width="${W+4000}" height="${H+4000}" fill="rgb(230,236,214)"/>`+bakeSea(A,shapes);
+  shapes.forEach(s=>{ out+=`<path d="${s}" fill="none" stroke="#2c5a22" stroke-width="1.6" stroke-linejoin="round"/>`; });
+  A.lakes.forEach(l=>{ const pts=[], q=(l.rot||0)*Math.PI/180;
+    for(let a=0;a<24;a++){ const t=a/24*Math.PI*2, x=Math.cos(t)*l.r[0]*(1+(rnd()-.5)*.15), y=Math.sin(t)*l.r[1]*(1+(rnd()-.5)*.15);
+      pts.push([l.c[0]+x*Math.cos(q)-y*Math.sin(q), l.c[1]+x*Math.sin(q)+y*Math.cos(q)]); }
+    out+=`<path d="${poly(pts,true)}" fill="#a9cdc6" stroke="#2f5a6d" stroke-width=".8"/>`; });
+  // forests: a soft wash under each wood, then the trees, back to front
+  const edges=A.forests.map(f=>wobble(f.pts,rnd,9,f.g*.9,true));
+  out+=`<g opacity=".6">${A.forests.map((f,i)=>{ const c=f.pine?(f.dark?"#2f4430":"#6b7a4c"):f.birch?"#a9c27a":"#7aa35a";
+    return `<path d="${poly(edges[i],true)}" fill="${c}" stroke="${c}" stroke-width="4" stroke-opacity=".5" stroke-linejoin="round"/>`; }).join("")}</g>`;
+  // highlands: rows of rounded green hills, back to front, each row drawn as one shape plus one line for its crests
+  (A.hills||[]).forEach(h=>{ const edge=wobble(h.pts,rnd,9,3,true), xs=edge.map(p=>p[0]), ys=edge.map(p=>p[1]), g=h.g*.78;
+    out+=`<path d="${poly(edge,true)}" fill="#a9c47c" stroke="#a9c47c" stroke-width="5" stroke-opacity=".5" stroke-linejoin="round"/>`;
+    let row=0;
+    for(let y=Math.min(...ys)+g*.3;y<Math.max(...ys)+g*.2;y+=g*.52,row++){ let fill="", crest="";
+      for(let x=Math.min(...xs)+(row%2)*g*.7;x<Math.max(...xs);x+=g*(1+rnd()*.9)){
+        const cx=x+(rnd()-.5)*g*.6, cy=y+(rnd()-.5)*g*.25, w=g*(1.3+rnd()*1.3), ht=g*(.2+rnd()*.3);
+        if(!inside([cx,cy-ht*.5],edge)) continue;
+        const top=`M${f1(cx-w/2)},${f1(cy)}C${f1(cx-w/4)},${f1(cy-ht*1.35)} ${f1(cx+w/4)},${f1(cy-ht*1.35)} ${f1(cx+w/2)},${f1(cy)}`;
+        fill+=top+`L${f1(cx+w/2)},${f1(cy+ht*.7)}L${f1(cx-w/2)},${f1(cy+ht*.7)}Z`; crest+=top; }
+      if(fill) out+=`<path d="${fill}" fill="url(#pHill)"/><path d="${crest}" fill="none" stroke="#3f5a2c" stroke-width=".7" stroke-linecap="round"/>`; } });
+  const trees=[];
+  A.forests.forEach((f,i)=>{ const edge=edges[i], xs=edge.map(p=>p[0]), ys=edge.map(p=>p[1]); let row=0;
+    for(let y=Math.min(...ys);y<Math.max(...ys);y+=f.g*.62,row++) for(let x=Math.min(...xs)+(row%2)*f.g*.5;x<Math.max(...xs);x+=f.g*.85){
+      const p=[x+(rnd()-.5)*f.g*.8, y+(rnd()-.5)*f.g*.6];
+      if(inside(p,edge)&&rnd()>(f.sparse||.08)) trees.push([p[0],p[1],f]); } });
+  // trees: one shape per color within each band of rows, back to front (thousands of trees, a few dozen elements)
+  const batch=new Map(); let band=null;
+  const flush=()=>{ batch.forEach((d,key)=>{ const [c,pine]=key.split("|"); out+=pine?`<path fill="${c}" d="${d}"/>`:`<path fill="${c}" stroke="#23401f" stroke-width=".35" d="${d}"/>`; }); batch.clear(); };
+  trees.sort((a,b)=>a[1]-b[1]).forEach(([x,y,f])=>{
+    if(Math.floor(y/24)!==band){ flush(); band=Math.floor(y/24); }
+    const pal=LEAVES[f.pine?(f.dark?"darkpine":"pine"):f.birch?"birch":f.dark?"dark":"wood"], c=pal[Math.floor(rnd()*pal.length)], r=1.9+rnd()*.9;
+    const seg=f.pine?`M${f1(x)},${f1(y-7)}L${f1(x+2.8)},${f1(y)}L${f1(x-2.8)},${f1(y)}Z`
+      :`M${f1(x-r)},${f1(y-r)}a${f1(r)},${f1(r)} 0 1 0 ${f1(2*r)},0a${f1(r)},${f1(r)} 0 1 0 ${f1(-2*r)},0`;
+    batch.set(c+"|"+(f.pine?"1":""),(batch.get(c+"|"+(f.pine?"1":""))||"")+seg); });
+  flush();
+  // rivers over the woods, each with a pale edge so it reads through the trees
+  A.rivers.forEach(r=>{ (r.parts||[r.pts]).forEach(pp=>{ const d=smooth(wobble(pp,rnd,10,1.2,false)), w=r.w||1.3;
+      out+=`<path d="${d}" fill="none" stroke="#eef3df" stroke-opacity=".7" stroke-width="${f1(w+1.8)}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#3b77a8" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`; });
+    if(r.name&&r.at) out+=`<text class="rivername minor" x="${r.at[0]}" y="${r.at[1]}">${esc(r.name)}</text>`; });
+  (A.roads||[]).forEach(r=>{ out+=`<path d="${smooth(r.pts)}" fill="none" stroke="#7a4a2a" stroke-width="1" stroke-dasharray="3 2"/>`; });
+  // mountains: a dark shadow under each range, then painted peaks back to front
+  out+=`<g opacity=".12">${A.mountains.map(m=>[14,8].map(w=>`<path d="${smooth(m.pts)}" fill="none" stroke="${PAINT[m.c][0]}" stroke-width="${f1(w*m.s)}" stroke-linecap="round"/>`).join("")).join("")}</g>`;
+  const peaks=[];
+  A.mountains.forEach(m=>{ const ps=wobble(m.pts,rnd,6*m.s,1.5,false);
+    ps.forEach((p,i)=>{ peaks.push([p[0]+(rnd()-.5)*4,p[1]+(rnd()-.5)*5,m.s,m.c]);
+      if(m.s>=1){ const a=ps[Math.max(0,i-1)], b=ps[Math.min(ps.length-1,i+1)], L=Math.hypot(b[0]-a[0],b[1]-a[1])||1, nx=-(b[1]-a[1])/L, ny=(b[0]-a[0])/L, o=(i%2?1:-1)*(5+rnd()*5)*m.s;
+        peaks.push([p[0]+nx*o,p[1]+ny*o+3,m.s*.8,m.c]); } }); });
+  (A.rings||[]).forEach(rg=>{ for(let a=0;a<360;a+=9){ const t=a*Math.PI/180; peaks.push([rg.c[0]+Math.cos(t)*rg.r,rg.c[1]+Math.sin(t)*rg.r*.8+4,rg.s,rg.col]); } });
+  (A.peaks||[]).forEach(([x,y,s,,c])=>peaks.push([x,y,s,c]));
+  // peaks: lit and shaded faces gathered per color within thin bands of rows, back to front
+  const pk=new Map(); let pband=null;
+  const pflush=()=>{ pk.forEach((f,c)=>{ const [d,l]=PAINT[c]||PAINT.dark; out+=`<path fill="${l}" d="${f[0]}"/><path fill="${d}" stroke="${d}" stroke-width=".5" stroke-linejoin="round" d="${f[1]}"/>`; }); pk.clear(); };
+  peaks.sort((a,b)=>a[1]-b[1]).forEach(([x,y,s,c])=>{ if(Math.floor(y/5)!==pband){ pflush(); pband=Math.floor(y/5); }
+    const [l,d]=peakFaces(x,y,s,rnd), f=pk.get(c)||["",""]; f[0]+=l; f[1]+=d; pk.set(c,f); });
+  pflush();
+  // names: regions in red and blue capitals, small names in italic, the sea's name written down the sea
+  const turn=(r,x,y)=>r?` transform="rotate(${r} ${f1(x)} ${f1(y)})"`:"";
+  A.regions.forEach(([t,x,y,s,col,halo,rot])=>{ out+=`<text class="region" x="${f1(x)}" y="${f1(y)}" font-size="${s}" style="fill:${col};stroke:${halo||"#f4e6b4"}"${turn(rot,x,y)}>${esc(t.toUpperCase())}</text>`; });
+  (A.names||[]).forEach(([t,x,y,s,col,anchor,rot])=>{ out+=`<text class="pname fine" x="${f1(x)}" y="${f1(y)}" font-size="${s}" style="${col?`fill:${col};`:""}${anchor?`text-anchor:${anchor};`:""}"${turn(rot,x,y)}>${esc(t)}</text>`; });
+  A.seas.forEach(([t,x,y,s,rot,dx,dy])=>{
+    if(rot==="v") [...t.toUpperCase()].forEach((ch,i)=>{ out+=`<text class="seaname vertical" x="${f1(x+i*(dx||0))}" y="${f1(y+i*(dy??s*1.5))}" font-size="${s}">${esc(ch)}</text>`; });
+    else out+=`<text class="seaname" x="${f1(x)}" y="${f1(y)}" font-size="${s}"${turn(rot,x,y)}>${esc(t)}</text>`; });
+  out+=placesSVG(A);
+  // the cartouche at the foot of the map, and a compass rose in the north-east
+  out+=`<g class="cartouche painted-c" transform="translate(${(A.cartouche||[640,786]).map(f1)})"><rect x="-122" y="-28" width="244" height="54" rx="2"/><rect x="-116" y="-22" width="232" height="42" rx="1" style="fill:none"/>
+    <text class="t" y="-2" font-size="15">${esc(A.title)}</text><text class="s" y="13" font-size="10">${esc(A.sub)}</text></g>`;
+  let rose=""; for(let a=0;a<8;a++){ const L=a%2?16:30, t=a*Math.PI/4, s=Math.sin(t), c=-Math.cos(t), px=-c*4, py=s*4;
+    rose+=`<path d="M0,0L${f1(s*L)},${f1(c*L)}L${f1(px)},${f1(py)}Z" fill="${a%2?"#8c6a3a":"#2f5b8c"}"/><path d="M0,0L${f1(s*L)},${f1(c*L)}L${f1(-px)},${f1(-py)}Z" fill="${a%2?"#d9b77a":"#a3361f"}"/>`; }
+  out+=`<g transform="translate(${(A.compass||[962,98]).map(f1)})" aria-hidden="true"><circle r="21" fill="#f5ead0" fill-opacity=".8" stroke="#5a3b22" stroke-width=".8"/><circle r="17" fill="none" stroke="#5a3b22" stroke-width=".4"/>${rose}
+    <text y="-33" text-anchor="middle" font-family="IM Fell English SC,serif" font-size="10" fill="#a3361f">N</text></g>`;
+  return `<g id="world" class="painted">${out}</g>`;
+}
+function drawAge(key){
+  const A=AGES[key], rnd=mulberry32(key.length*977+13);
+  if(A.painted) return drawPainted(key);
+  const land=wobble(A.land,rnd,7,1.6,true), landD=poly(land,true);
+  let out=`<rect x="-2000" y="-2000" width="${W+4000}" height="${H+4000}" fill="#c3d2c9"/>`;
+  // sea lines along the coast, then the land
+  out+=`<path class="coastA" d="${landD}"/><path class="coastB" d="${landD}"/><path class="coastC" d="${landD}"/>`;
+  A.islands.forEach(is=>{ const d=poly(wobble(is,rnd,6,1.2,true),true); out+=`<path class="coastB" d="${d}"/>`; });
+  out+=`<path class="land" d="${landD}"/>`;
+  A.islands.forEach(is=>{ out+=`<path class="land" d="${poly(wobble(is,rnd,6,1.2,true),true)}"/>`; });
+  A.lakes.forEach(l=>{ const pts=[]; for(let a=0;a<24;a++){ const t=a/24*Math.PI*2; pts.push([l.c[0]+Math.cos(t)*l.r[0]*(1+(rnd()-.5)*.15),l.c[1]+Math.sin(t)*l.r[1]*(1+(rnd()-.5)*.15)]); }
+    out+=`<path class="lake" d="${poly(pts,true)}"/>`; });
+  // rivers, with their names along them
+  A.rivers.forEach(r=>{ out+=`<path class="river" d="${smooth(wobble(r.pts,rnd,10,1.4,false))}"/>`;
+    if(r.name&&r.at) out+=`<text class="rivername minor" x="${r.at[0]}" y="${r.at[1]}">${esc(r.name)}</text>`; });
+  // forests: little inked trees, back to front
+  const trees=[];
+  A.forests.forEach(f=>{
+    const edge=wobble(f.pts,rnd,9,f.g*.9,true), xs=edge.map(p=>p[0]), ys=edge.map(p=>p[1]);   // a ragged edge, not a ruled one
+    let row=0;
+    for(let y=Math.min(...ys);y<Math.max(...ys);y+=f.g*.72,row++) for(let x=Math.min(...xs)+(row%2)*f.g*.5;x<Math.max(...xs);x+=f.g){
+      const p=[x+(rnd()-.5)*f.g*.9, y+(rnd()-.5)*f.g*.7];
+      if(inside(p,edge)&&rnd()>.12) trees.push([p[0],p[1],f]); } });
+  trees.sort((a,b)=>a[1]-b[1]).forEach(([x,y,f])=>{
+    const fill=f.gold?' style="fill:#c9a94a"':'';
+    if(f.pine) out+=`<path class="tree"${fill} d="M${f1(x)},${f1(y-7)}L${f1(x+2.6)},${f1(y-1)}L${f1(x-2.6)},${f1(y-1)}Z"/><path class="trunk" d="M${f1(x)},${f1(y-1)}v2"/>`;
+    else { const r=1.7+rnd()*.9, v=rnd();
+      out+=`<path class="trunk" d="M${f1(x)},${f1(y)}v-2.2"/>`;
+      out+=v<.7?`<circle class="tree"${fill} cx="${f1(x)}" cy="${f1(y-2.2-r)}" r="${f1(r)}"/>`
+        :`<path class="tree"${fill} d="M${f1(x-r)},${f1(y-2)}Q${f1(x-r*1.1)},${f1(y-2-r*2.4)} ${f1(x)},${f1(y-2-r*2.6)}Q${f1(x+r*1.1)},${f1(y-2-r*2.4)} ${f1(x+r)},${f1(y-2)}Z"/>`; } });
+  // mountains along their ranges, plus single great peaks, back to front
+  const peaks=[];
+  A.mountains.forEach(m=>{ wobble(m.pts,rnd,6.5*m.s,1.5,false).forEach((p,i)=>{ peaks.push([p[0]+(rnd()-.5)*4,p[1]+(rnd()-.5)*5,m.s]); if(m.s>1&&i%2) peaks.push([p[0]+(rnd()-.5)*10,p[1]+5+rnd()*5,m.s*.8]); }); });
+  (A.rings||[]).forEach(rg=>{ for(let a=0;a<360;a+=10){ const t=a*Math.PI/180; peaks.push([rg.c[0]+Math.cos(t)*rg.r,rg.c[1]+Math.sin(t)*rg.r*.8+4,rg.s]); } });
+  (A.peaks||[]).forEach(([x,y,s])=>peaks.push([x,y,s]));
+  peaks.sort((a,b)=>a[1]-b[1]).forEach(([x,y,s])=>{ out+=peak(x,y,s,rnd); });
+  (A.peaks||[]).forEach(([x,y,s,name])=>{ if(name) out+=`<text class="rivername minor" style="fill:#3b2a1a" x="${x+10*s}" y="${y-4}">${esc(name)}</text>`; });
+  // names of regions and seas
+  A.regions.forEach(([t,x,y,s])=>{ out+=`<text class="region" x="${x}" y="${y}" font-size="${s}">${esc(t.toUpperCase())}</text>`; });
+  A.seas.forEach(([t,x,y,s,rot])=>{ out+=`<text class="seaname" x="${x}" y="${y}" font-size="${s}" transform="rotate(${rot} ${x} ${y})">${esc(t)}</text>`; });
+  out+=placesSVG(A);
+  // a cartouche with the map's title, and a compass rose
+  out+=`<g class="cartouche" transform="translate(${key==="beleriand"?820:830},${key==="beleriand"?740:470})"><rect x="-110" y="-30" width="220" height="56" rx="3"/><rect x="-104" y="-24" width="208" height="44" rx="2" style="fill:none"/>
+    <text class="t" y="-3" font-size="16">${esc(A.title)}</text><text class="s" y="14" font-size="10.5">${esc(A.sub)}</text></g>`;
+  const cx=key==="beleriand"?935:205, cy=key==="beleriand"?762:655;      // the compass sits out at sea
+  out+=`<g transform="translate(${cx},${cy})" aria-hidden="true"><circle r="20" fill="none" stroke="#3b2a1a" stroke-width=".8"/>
+    <path d="M0,-26L4,0L0,26L-4,0Z" fill="#3b2a1a"/><path d="M-26,0L0,4L26,0L0,-4Z" fill="#efe3c4" stroke="#3b2a1a" stroke-width=".7"/>
+    <text y="-30" text-anchor="middle" font-family="IM Fell English SC,serif" font-size="10" fill="#8c2f1b">N</text></g>`;
+  return `<g id="world">${out}</g>`;
+}
+
+/* ---------- pan and zoom ---------- */
+const drawn={};   // each age is drawn once and kept
+let view={x:0,y:0,k:1}, shown={x:0,y:0,k:1}, settle=0, lastDraw=0, age="middle-earth";
+function sheet(){ const r=document.getElementById("app").getBoundingClientRect(), s=Math.min(r.width/W,r.height/H); return {r,s,ox:(r.width-W*s)/2,oy:(r.height-H*s)/2}; }
+// While the map moves, the picture already drawn is slid and scaled as a whole (cheap); the map is redrawn
+// at the new view once it settles, or every half second during a long drag.
+function apply(){ const {s,ox,oy}=sheet(), a=view.k/shown.k;
+  svg.style.transform=`translate(${f1(ox+s*view.x-a*(ox+s*shown.x))}px,${f1(oy+s*view.y-a*(oy+s*shown.y))}px) scale(${a})`;
+  clearTimeout(settle); if(performance.now()-lastDraw>800) redraw(); else settle=setTimeout(redraw,140); }
+function redraw(){ clearTimeout(settle); lastDraw=performance.now(); shown={...view};
+  const g=document.getElementById("world"); if(g) g.setAttribute("transform",`translate(${f1(view.x)},${f1(view.y)}) scale(${view.k})`);
+  svg.style.transform=""; labelDensity(); }
+function clamp(){ view.k=Math.min(8,Math.max(1,view.k)); const minX=W-W*view.k, minY=H-H*view.k; view.x=Math.min(0,Math.max(minX,view.x)); view.y=Math.min(0,Math.max(minY,view.y)); }
+function toMap(cx,cy){ const {r,s,ox,oy}=sheet(); return {x:(cx-r.left-ox)/s, y:(cy-r.top-oy)/s}; }   // screen point to sheet units
+function zoomAt(f,mx,my){ const k0=view.k, k1=Math.min(8,Math.max(1,k0*f)); view.x=mx-(mx-view.x)*k1/k0; view.y=my-(my-view.y)*k1/k0; view.k=k1; clamp(); apply(); }
+function labelDensity(){ // hide small names until they are big enough to read
+  const px=sheet().s*view.k;
+  svg.classList.toggle("minor-off",px*9<8.5); svg.classList.toggle("fine-off",px*6.5<8); }
+svg.addEventListener("wheel",e=>{ e.preventDefault(); const p=toMap(e.clientX,e.clientY); zoomAt(Math.exp(-e.deltaY*.0015),p.x,p.y); },{passive:false});
+const pointers=new Map(); let drag=null, pinch=null, moved=0, pressed=null;   // pressed: the place under the pointer when it went down
+svg.addEventListener("pointerdown",e=>{ pressed=e.target.closest&&e.target.closest(".place"); try{ svg.setPointerCapture(e.pointerId); }catch(err){} pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); moved=0;
+  if(pointers.size===1){ const p=toMap(e.clientX,e.clientY); drag={x:p.x,y:p.y,vx:view.x,vy:view.y}; }
+  if(pointers.size===2){ const [a,b]=[...pointers.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),k:view.k}; drag=null; } });
+svg.addEventListener("pointermove",e=>{
+  if(!pointers.has(e.pointerId)){ hover(e); return; }
+  const prev=pointers.get(e.pointerId); moved+=Math.hypot(e.clientX-prev.x,e.clientY-prev.y); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&pointers.size===2){ const [a,b]=[...pointers.values()], m=toMap((a.x+b.x)/2,(a.y+b.y)/2); zoomAt(pinch.k*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d/view.k,m.x,m.y); return; }
+  if(drag&&moved>4){ svg.classList.add("dragging"); const p=toMap(e.clientX,e.clientY); view.x=drag.vx+(p.x-drag.x); view.y=drag.vy+(p.y-drag.y);
+    drag.vx=view.x; drag.vy=view.y; clamp(); apply(); const q=toMap(e.clientX,e.clientY); drag.x=q.x; drag.y=q.y; } });
+const up=e=>{ pointers.delete(e.pointerId); if(pointers.size<2) pinch=null; if(!pointers.size){ drag=null; svg.classList.remove("dragging"); } };
+svg.addEventListener("pointerup",e=>{ const wasClick=moved<5&&pointers.size===1; up(e);
+  if(wasClick){ if(pressed) openPlace(pressed.dataset.id); else closeCard(); } pressed=null; });
+svg.addEventListener("pointercancel",up);
+document.getElementById("zin").addEventListener("click",()=>zoomAt(1.6,W/2,H/2));
+document.getElementById("zout").addEventListener("click",()=>zoomAt(1/1.6,W/2,H/2));
+document.getElementById("zreset").addEventListener("click",()=>{ view={x:0,y:0,k:1}; apply(); });
+
+/* ---------- places ---------- */
+const card=document.getElementById("card"), tip=document.getElementById("tip");
+function findPlace(id){ return AGES[age].places.find(p=>p.id===id); }
+function openPlace(id){
+  const p=findPlace(id); if(!p) return; const url=p.city&&CITY_URL[p.city];
+  svg.querySelectorAll(".place").forEach(g=>g.classList.toggle("on",g.dataset.id===id));
+  card.innerHTML=`<button class="close" aria-label="Close">&times;</button><p class="kicker">${esc(p.kicker)} · ${age==="beleriand"?"First Age":"Third Age"}</p><h2>${esc(p.name)}</h2>
+    <p class="lore">${esc(p.text)}</p>
+    ${url?`<a class="go" href="${url}" target="_blank" rel="noopener">Open the city map <span aria-hidden="true">↗</span></a>`:`<span class="soon">No city map yet</span>`}`;
+  card.hidden=false; card.querySelector(".close").addEventListener("click",closeCard);
+}
+function closeCard(){ card.hidden=true; svg.querySelectorAll(".place.on").forEach(g=>g.classList.remove("on")); }
+svg.addEventListener("keydown",e=>{ const pl=e.target.closest&&e.target.closest(".place"); if(pl&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); openPlace(pl.dataset.id); } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeCard(); });
+function hover(e){ const pl=e.target.closest&&e.target.closest(".place");
+  if(!pl){ tip.hidden=true; return; } const p=findPlace(pl.dataset.id); const r=document.getElementById("app").getBoundingClientRect();
+  tip.textContent=p.city&&CITY_URL[p.city]?p.name+": open the city map":p.name; tip.hidden=false; tip.style.left=(e.clientX-r.left+14)+"px"; tip.style.top=(e.clientY-r.top+14)+"px"; }
+svg.addEventListener("pointerleave",()=>{ tip.hidden=true; });
+
+/* ---------- ages ---------- */
+function show(key){
+  age=key; view={x:0,y:0,k:1}; closeCard();
+  svg.innerHTML=(drawn[key]??=drawAge(key)); document.getElementById("app").style.background=AGES[key].painted?"#e6ecd6":""; redraw();
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.age===key)));
+  document.getElementById("subtitle").textContent=AGES[key].blurb+" Click a red seal to open that city's map.";
+  try{ history.replaceState(null,"","#"+key); }catch(e){}
+}
+document.getElementById("tabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) show(b.dataset.age); });
+new ResizeObserver(labelDensity).observe(svg);
+const start=(location.hash||"").slice(1);
+show(AGES[start]?start:"middle-earth");
+})();
+</script>

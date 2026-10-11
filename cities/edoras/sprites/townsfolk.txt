@@ -1,0 +1,9 @@
+# Townsfolk of Edoras, in the map's order. Rohirrim: tall Men, mostly fair-haired, the men usually bearded.
+a water-carrier of Rohan: a human woman with long fair braided hair, a plain blue tunic, unarmed
+a trader of Rohan: a human man with brown hair and a short beard, a rich green and gold robe, a short cloak, unarmed
+a lore-keeper of Rohan: an old human man with long white hair and a long white beard, a grey robe and a spellbook
+a gardener of Rohan: a human man with short fair hair and a short beard, a brown and green tunic, unarmed
+a minstrel of Rohan: a human man with long golden hair and a short beard, a green tunic and a lute
+a wright of Rohan who works timber: a broad human man with short brown hair and a brown beard, a brown leather tunic and a mace
+a woman of Edoras: a human woman with long flowing golden hair, a green robe, unarmed
+a fire-keeper of Edoras: a human man with fair hair in a ponytail and a short beard, a dark brown tunic, carrying a torch

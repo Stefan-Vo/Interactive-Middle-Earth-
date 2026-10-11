@@ -1,0 +1,4 @@
+# The named people of Aldburg, in the order the map expects. The Rohirrim are tall Men, mostly fair-haired, often with long braids; the men are usually bearded.
+Éomer, Third Marshal of the Riddermark: a tall human warrior with long golden braided hair and a short golden beard, green and silver chain mail, a helmet with a white horse-tail crest, a long green cloak, a sword and a green shield
+Éowyn of Rohan: a tall human woman with long golden hair in a single braid, grey eyes, a white and pale green riding dress, a short green cloak, unarmed
+Éothain, a rider of Éomer's éored: a young tall human with fair braided hair and a short fair beard, chain mail, a helmet with a horse-tail crest, a short green cloak, a spear and a round green shield

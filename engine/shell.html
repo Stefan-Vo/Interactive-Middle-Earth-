@@ -1,0 +1,115 @@
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+/*ENGINE_CSS*/
+</style>
+<div id="app">
+  <div id="scene" aria-label="3D map of {{NAME}} seen from above"></div>
+  <div id="labels"></div>
+
+  <aside id="places" class="panel" aria-label="Places in {{NAME}}">
+    <div class="brand">
+      <div class="brand-text">
+        <h1>{{NAME}}</h1>
+        <p>{{TAGLINE}}</p>
+      </div>
+      <button id="togglePlaces" aria-expanded="false" aria-controls="explorePane buildPane">Menu</button>
+    </div>
+    <div class="modes" role="tablist" aria-label="Mode">
+      <button id="modeExplore" role="tab" aria-selected="true" aria-controls="explorePane">Explore</button>
+      <button id="modeBuild" role="tab" aria-selected="false" aria-controls="buildPane" disabled title="Loading your saved buildings">Build</button>
+    </div>
+    <div class="clock" aria-label="City clock">
+      <div class="clk-read"><span id="clkTime" class="clk-time">08:00</span><span id="clkPhase" class="clk-phase">Morning · Day 1</span></div>
+      <button class="mini" id="clkPlay" aria-label="Pause the clock" aria-pressed="false">Pause</button>
+      <div class="clk-row">
+        <div class="seg" id="clkSpeed" role="group" aria-label="Clock speed">
+          <button class="mini" data-rate="1" aria-pressed="true" title="One minute of city time every second">1&times;</button>
+          <button class="mini" data-rate="5" aria-pressed="false" title="Five minutes of city time every second">5&times;</button>
+          <button class="mini" data-rate="20" aria-pressed="false" title="Twenty minutes of city time every second">20&times;</button>
+        </div>
+        <select id="clkJump" aria-label="Jump to a time of day"><option value="">Jump to…</option><option value="5.5">Dawn</option><option value="8">Morning</option><option value="12">Midday</option><option value="15">Afternoon</option><option value="18.5">Evening</option><option value="22">Night</option></select>
+      </div>
+    </div>
+    <div id="explorePane" class="pane" role="tabpanel" aria-labelledby="modeExplore">
+      <div class="search">
+        <label for="q" hidden>Search places</label>
+        <input id="q" type="search" placeholder="{{SEARCH_PLACEHOLDER}}" autocomplete="off">
+      </div>
+      <nav id="list"></nav>
+      <div class="foot">{{FOOTNOTE}}</div>
+    </div>
+    <div id="buildPane" class="pane" role="tabpanel" aria-labelledby="modeBuild" hidden>
+      <div class="tools" role="group" aria-label="Build tool">
+        <button data-tool="place" aria-pressed="true" title="Place buildings (1)">Place</button>
+        <button data-tool="edit" aria-pressed="false" title="Select and edit your buildings (2)">Select</button>
+        <button data-tool="demolish" aria-pressed="false" title="Remove buildings (3)">Demolish</button>
+      </div>
+      <div class="bscroll">
+        <div id="palette" class="pal"></div>
+        <div class="opts">
+          <div><span class="olabel">Color</span><div class="sws" id="curSw"></div></div>
+          <div class="row"><label for="sizeIn" class="olabel">Size</label><input type="range" id="sizeIn" min="0.5" max="2.5" step="0.1" value="1"><output id="sizeOut" for="sizeIn">1.0&times;</output></div>
+          <div class="row"><span class="olabel">Turn</span><button class="mini" id="rotMinus" title="Turn left (Q)">&minus;15&deg;</button><output id="rotOut">0&deg;</output><button class="mini" id="rotPlus" title="Turn right (E)">+15&deg;</button></div>
+          <label class="chk"><input type="checkbox" id="snapIn" checked> Snap to the grid</label>
+        </div>
+        <p class="counts" id="counts"></p>
+      </div>
+      <div class="bfoot">
+        <button class="mini" id="undoBtn" disabled title="Undo (Ctrl+Z)">Undo</button>
+        <button class="mini" id="redoBtn" disabled title="Redo (Ctrl+Y)">Redo</button>
+        <button class="mini danger" id="resetBtn">Reset</button>
+        <span id="saveState"></span>
+      </div>
+      <div class="confirm" id="resetConfirm" hidden>
+        <p id="resetText"></p>
+        <div class="row"><button class="mini danger" id="resetYes">Reset the sandbox</button><button class="mini" id="resetNo">Keep everything</button></div>
+      </div>
+    </div>
+  </aside>
+
+  <article id="info" class="panel" hidden aria-live="polite"></article>
+
+  <div id="controls">
+    <button id="rotL" title="Rotate left 90°" aria-label="Rotate view left">&#x27F2;</button>
+    <button id="rotR" title="Rotate right 90°" aria-label="Rotate view right">&#x27F3;</button>
+    <button id="compass" title="Reset rotation" aria-label="Reset rotation">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><g id="needle"><path d="M12 3 L15.5 12 L12 10.6 L8.5 12 Z" fill="#c0392b"/><path d="M12 21 L8.5 12 L12 13.4 L15.5 12 Z" fill="currentColor" opacity=".55"/></g></svg>
+    </button>
+    <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+    <button id="zout" title="Zoom out" aria-label="Zoom out">&minus;</button>
+    <button id="home" title="Show the whole city" aria-label="Show the whole city">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+    </button>
+    <button id="peopleToggle" title="Show or hide people" aria-label="People" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="3"/><path d="M3.5 20c.6-4 2.8-6 5.5-6s4.9 2 5.5 6"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 13.6c2.4-.3 4.4 1.4 5 5.4"/></svg>
+    </button>
+    <button id="lblToggle" title="Show or hide labels" aria-label="Labels" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10l5 5-5 5H4z"/></svg>
+    </button>
+  </div>
+
+  <div id="hint" class="panel"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Right-drag</b> or the arrow buttons to rotate · <b>Click</b> a building</div>
+  <div id="tip" hidden></div>
+  <div id="toast" class="panel" hidden role="status"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/*STYLE_JS*/
+</script>
+<script>
+/*CITY_JS*/
+</script>
+<script>
+/*CITY_SPRITES*/
+</script>
+<script>
+/*RECIPES_JS*/
+</script>
+<script>
+/*ENGINE_JS*/
+</script>

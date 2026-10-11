@@ -1,0 +1,9 @@
+# Townsfolk of Dor-lómin, in the map's order. Edain of Hador's house: tall Men, golden-haired.
+a water-carrier of Dor-lómin: a human woman with long golden braided hair, a plain blue dress and apron, carrying a wooden bucket, unarmed
+a trader of Hithlum: a human man with fair hair and a short beard, a brown and green wool coat, a satchel, unarmed
+a lore-keeper of the House of Hador: an old human man with long white hair and a white beard, a long dark green robe, holding a scroll, unarmed
+a farmer of Dor-lómin: a sturdy human with fair hair, a straw hat, a plain brown tunic and a hoe
+a singer of the Edain: a young human woman with long golden hair, a red dress and a small harp, unarmed
+a wright of Dor-lómin: a broad human man with brown hair and a beard, a leather apron and a mallet
+a woman of Dor-lómin: a tall human woman with golden hair under a white headscarf, a green wool dress and a shawl, unarmed
+a fire-keeper of Dor-lómin: a young human man with fair hair, a brown tunic and hood, carrying a burning torch, unarmed

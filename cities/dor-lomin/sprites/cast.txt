@@ -1,0 +1,7 @@
+# Dor-lómin's sprites in map order (build.py reads this; see the README, "Reusing sprites").
+# The lords: this city's own sprites, from people.json.
+own:0-5
+# One per quarter, in district order: Húrin's Household, the Woodwrights, Herders and Farmers.
+edain/guard edain/woodwright edain/herdsman
+# The townsfolk, in the usual order.
+edain/townsfolk

@@ -1,0 +1,8 @@
+# Townsfolk of Barad Eithel, in the map's order. Noldor of Hithlum: tall, grey-eyed, beardless, mostly dark-haired.
+an elf water-bearer of Hithlum: a woman with long dark hair, grey eyes, a pale blue dress, carrying a silver jug, unarmed
+an elf loremaster of the Noldor: a man with long dark hair and no beard, a deep blue robe with silver embroidery, holding a book, unarmed
+an elf gardener of Hithlum: a woman with braided dark hair, a green tunic and apron, holding a trowel, unarmed
+an elf minstrel of the Noldor: a man with long dark hair and no beard, a blue and silver tunic, playing a harp, unarmed
+an elf stonemason of the Noldor: a man with short dark hair and no beard, a grey work tunic and leather apron, holding a mallet, unarmed
+an elf lamplighter of Barad Eithel: a man with long dark hair and no beard, a dark blue hooded cloak, carrying a long lamp pole, unarmed
+an elf of Hithlum: a woman with long dark hair, grey eyes, a simple white and blue gown and a grey cloak, unarmed

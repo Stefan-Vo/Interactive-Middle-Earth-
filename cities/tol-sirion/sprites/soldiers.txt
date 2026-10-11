@@ -1,0 +1,5 @@
+# One soldier per garrison quarter, in district order: Tower Watch, Orodreth's Household, River Wardens, Bridge Guard.
+an elf archer of the tower watch of Minas Tirith: long golden hair and no beard, a silver helm, grey-blue mail, a white surcoat, and a longbow
+an elf guard of Orodreth's household: golden hair and no beard, a gilded helm, silver mail, a deep blue surcoat with gold trim, a sword and a round shield
+an elf river warden of Tol Sirion: long dark hair tied back and no beard, light mail over a leather jerkin, a green-grey cloak, and a long spear
+an elf guard of the bridge of Tol Sirion: dark hair and no beard, a tall silver helm, silver mail, a long blue shield, and a spear

@@ -1,0 +1,7 @@
+# The named people of Barad Eithel in the last years of the Siege of Angband, in the order the map expects. The Noldor of
+# Fingolfin's house are tall, grey-eyed, beardless, mostly dark-haired, in blue and silver. Hador and Galdor are Men of
+# the Third House of the Edain: golden-haired and bearded.
+Fingolfin, High King of the Noldor: a tall, proud elf king with long dark hair and no beard, bright grey eyes, a silver crown set with a white gem, silver plate armor, a blue surcoat with silver stars, a long blue cloak, a sword and a blue shield set with crystals
+Fingon, son of Fingolfin, heir of the High King: a tall elf prince with long dark hair in braids threaded with gold and no beard, grey eyes, no crown, silver mail, a blue tunic with a silver star, a short blue cloak, a sword at his side and a small golden harp
+Hador Lórindol, Lord of Dor-lómin: an old but tall and strong human lord with long golden hair going grey and a golden-grey beard, chain mail, a green and gold surcoat, a long green cloak, and a sword
+Galdor the Tall of Dor-lómin: a very tall human lord with long golden hair and a short golden beard, chain mail, a green cloak, a bow and a sword

@@ -1,0 +1,14 @@
+# The lords of Gondolin, in the order the map expects. Elves of Gondolin are Noldor: tall, grey-eyed,
+# mostly dark-haired, and beardless. Only Tuor, a mortal man, has a beard.
+Turgon, High King of the Noldor in Gondolin: a tall elf king with long dark hair and no beard, grey eyes, a golden crown, white and gold plate armor, a long white tabard with a scarlet heart emblem, a long red cloak, and a sword
+Idril Celebrindal, daughter of Turgon: a tall elf woman with long flowing golden hair, grey eyes, a silver circlet, a white robe and a long white cloak, unarmed
+Tuor, son of Huor: a tall mortal man with short golden hair and a short golden beard, white and silver chain mail, a helmet, a long white cloak, and a great axe
+Glorfindel, lord of the House of the Golden Flower: a tall elf lord with long flowing golden hair and no beard, grey eyes, gleaming gold plate armor, a gold tabard with a sun emblem, a long golden cloak, a sword and a gold shield
+Ecthelion, lord of the House of the Fountain: a tall elf lord with long dark hair and no beard, grey eyes, silver plate armor, a silver-white tabard with a white star emblem, a long silver-grey cloak, and a sword
+Maeglin, lord of the House of the Mole: a pale, sullen elf with straight black hair and no beard, dark eyes, black chain mail with no emblem, a short black cloak, and a black sword
+Duilin, lord of the House of the Swallow: a lithe elf archer with dark hair in a ponytail and no beard, grey eyes, dark blue and purple leather armor, a short dark blue cloak, and a longbow
+Egalmoth, lord of the House of the Heavenly Arch: a tall elf captain with dark hair and no beard, grey eyes, sky-blue chain mail, a blue tabard with a silver star emblem, a long sky-blue cloak, a sword and a blue shield
+Penlod, lord of the Pillar and the Tower of Snow: a very tall elf with long dark hair and no beard, grey eyes, white and pale grey plate armor with round pauldrons, a helmet, a long white cloak and a sword
+Galdor, lord of the House of the Tree: an elf lord with brown braided hair and no beard, grey eyes, green leather armor, a green tabard with a tree emblem, a short green cloak, and a mace
+Rog, lord of the House of the Hammer of Wrath: a broad, fierce elf smith with short black hair and no beard, rust-red leather armor with layered pauldrons, a short dark red cloak, and a heavy mace
+Salgant, lord of the House of the Harp: a plump elf noble with curly dark hair and no beard, a purple and gold tunic, a short purple cloak and a lute

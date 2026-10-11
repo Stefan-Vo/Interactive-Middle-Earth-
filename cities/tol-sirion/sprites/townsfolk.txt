@@ -1,0 +1,8 @@
+# Townsfolk of Tol Sirion, in the map's order. Finrod's people: tall, grey-eyed, beardless, often golden-haired.
+an elf water-bearer of Tol Sirion: a woman with long golden hair, grey eyes, a pale blue dress, carrying a silver jug, unarmed
+an elf loremaster of Finrod's people: a man with long dark hair and no beard, a grey robe with silver embroidery, holding a scroll, unarmed
+an elf gardener of Tol Sirion: a woman with braided golden-brown hair, a green tunic and apron, holding a trowel, unarmed
+an elf minstrel of Finrod's people: a man with long golden hair and no beard, a blue and silver tunic, playing a small harp, unarmed
+an elf stonemason of Tol Sirion: a man with short dark hair and no beard, a grey work tunic and a leather apron, holding a mallet, unarmed
+an elf lamplighter of Tol Sirion: a man with long dark hair and no beard, a dark blue hooded cloak, carrying a long lamp pole, unarmed
+an elf of Finrod's people: a woman with long golden hair, grey eyes, a simple white and blue gown and a light cloak, unarmed

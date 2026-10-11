@@ -1,0 +1,7 @@
+# One person of each quarter of Aldburg, in the map's district order. Rohirrim: tall, fair-haired, bearded, green and gold.
+a guard of the house of Eofor in Aldburg: a tall human with long fair braided hair and a short fair beard, gleaming chain mail, a helmet, a long green tabard with a white horse, a sword and a green shield
+a rider of the East-mark of Rohan: a tall human with fair hair in a ponytail and a short beard, chain mail, a helmet with a horse-tail crest, a short green cloak and a long spear
+a smith of Aldburg: a broad human with short brown hair and a full brown beard, a leather apron over a brown tunic, and a smith's hammer
+a yeoman of the Folde in Rohan: a sturdy human farmer with fair hair and a short beard, a padded brown jerkin, a short green cloak and a spear
+a herdsman of the Folde: a lean human with fair braided hair and a short beard, brown leather armor, a green hood and a dagger
+a shieldmaiden of Aldburg: a tall human woman with long golden braided hair, leather armor, a short green cloak, a sword and a round green shield

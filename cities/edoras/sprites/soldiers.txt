@@ -1,0 +1,7 @@
+# One rider of each quarter of Edoras, in the map's district order. Rohirrim: tall, fair-haired, bearded, green and gold.
+a guard of the King's Household of Rohan: a tall human with long fair braided hair and a short fair beard, gleaming chain mail, a helmet, a long green tabard, a short green cloak, a sword and a green shield
+a rider of the Éored of Rohan: a tall human with fair hair in a ponytail and a short beard, chain mail, a helmet, a short green cloak and a longbow
+a smith of Rohan: a broad human with short brown hair and a full brown beard, rust-brown leather armor and a mace
+a herdsman of Rohan: a lean human with fair braided hair and a short beard, brown leather armor, a short green cloak and a dagger
+a spearman of the Westfold of Rohan: a tall human with long fair hair and a fair beard, chain mail, a helmet, a short brown cloak, a sword and a round wooden shield
+a shieldmaiden of Rohan: a tall human woman with long golden braided hair, leather armor, a short green cloak, a sword and a round green shield

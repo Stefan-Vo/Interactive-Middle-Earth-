@@ -1,0 +1,7 @@
+# Nargothrond's sprites in map order (build.py reads this; see the README, "Reusing sprites").
+# The lords: Orodreth (from the library), then Nargothrond's own: Finduilas, Gwindor, Túrin, Gelmir, Arminas (lords.txt).
+noldor/orodreth own:0-4
+# One per district, in district order: the King's Household, the Wardens of the Guarded Plain, the Bridgewardens, the Hunters of the Faroth.
+noldor/guard-golden noldor/archer-golden noldor/bridge-guard sindar/hunter
+# The townsfolk, in the usual order.
+noldor/townsfolk

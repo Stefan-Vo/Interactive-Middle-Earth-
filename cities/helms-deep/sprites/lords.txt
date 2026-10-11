@@ -1,0 +1,8 @@
+# Named people at Helm's Deep, in the order the map expects (The Two Towers, "Helm's Deep").
+Erkenbrand, Lord of the Westfold and master of the Hornburg: an old but strong human lord with long grey braided hair and a grey beard, steel chain mail, a helmet, a long green cloak, a sword and a round shield
+Gamling the Old: an old human warrior with grey hair in braids and a long grey beard, leather armor, a short brown cloak, and a sword
+Théoden, King of Rohan: an old proud human king with long white hair and a long white beard, a golden crown, gleaming gold-trimmed chain mail, a long green cloak, a sword and a green and gold shield
+Éomer, Third Marshal of the Riddermark: a tall human warrior with long golden braided hair and a short golden beard, green and silver chain mail, a helmet, a long green cloak, a sword and a green shield
+Aragorn son of Arathorn: a tall human ranger with shaggy dark hair and dark stubble, grey eyes, worn brown leather armor, a long dark green cloak, and a sword
+Gimli son of Glóin: a stout dwarf with red-brown hair and a long braided red-brown beard, steel chain mail, a steel helmet, a short dark cloak, and a great axe
+Legolas of the Woodland Realm: a tall elf with long flowing golden hair and no beard, grey eyes, green and brown leather armor, a short green cloak, and a longbow

@@ -1,0 +1,13 @@
+# One soldier of each of the Twelve Houses, in the map's house order. All Noldorin elves: beardless.
+a guard of the House of the King: a tall elf soldier with dark hair and no beard, white plate armor with gold trim, a white tabard with a scarlet heart emblem, a helmet, a short red cloak, a sword and a shield
+a warrior of the House of the Mole: an elf with black hair and no beard, black chain mail with no emblem, a black helmet, a short black cloak and a dagger
+an archer of the House of the Swallow: a lithe elf with dark hair and no beard, white and dark blue leather armor, a short purple cloak and a longbow
+a soldier of the House of the Heavenly Arch: a tall elf with dark hair and no beard, sky-blue chain mail, a blue tabard with a star emblem, a sword and a blue shield
+a soldier of the House of the Pillar: a very tall elf with dark hair and no beard, pale grey plate armor, a helmet, a short grey tabard, a sword and a shield
+a soldier of the House of the Tower of Snow: a very tall elf with silver hair and no beard, white plate armor, a white helmet, a long white cloak and a sword
+a soldier of the House of the Wing: a tall elf with dark hair and no beard, white chain mail, a white helmet, a short white cloak, a sword and a white shield
+a soldier of the House of the Tree: an elf with brown hair and no beard, green leather armor, a green tabard with a tree emblem, a short green cloak and a mace
+a soldier of the House of the Golden Flower: a tall elf with golden hair and no beard, gold plate armor, a gold tabard with a sun emblem, a sword and a gold shield
+a soldier of the House of the Fountain: a tall elf with dark hair and no beard, silver chain mail, a silver tabard with a white star emblem, a helmet and a sword
+a soldier of the House of the Harp: an elf with dark hair and no beard, chain mail, a purple tabard with silver trim, a short purple cloak and a sword
+a smith of the House of the Hammer of Wrath: a broad elf with short black hair and no beard, rust-red leather armor and a mace

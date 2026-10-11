@@ -1,0 +1,5 @@
+# One soldier per quarter of the fortress, in district order: House of Fingolfin, Archers of the Tower, Wardens of the Springs, the Smithies.
+an elf guard of the House of Fingolfin: long dark hair and no beard, a tall silver helm, silver mail, a blue surcoat with a silver star, a spear and a blue shield
+an elf archer of Barad Eithel: long dark hair and no beard, a silver helm, grey mail, a grey-blue cloak, and a longbow
+an elf warden of the springs of Sirion: long dark hair tied back and no beard, light mail over a blue tunic, a teal cloak, and a long spear
+an elf smith of the Noldor: dark hair tied back and no beard, a leather apron over a grey tunic, holding a hammer

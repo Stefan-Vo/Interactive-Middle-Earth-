@@ -1,0 +1,9 @@
+# Townsfolk of Gondolin, in the map's order. Noldorin elves: tall, grey-eyed, mostly dark-haired, beardless.
+an elf water-carrier of Gondolin: a woman with long dark hair, grey eyes, a pale blue tunic, unarmed
+an elf merchant of Gondolin: a man with short dark hair and no beard, a rich green and gold robe, a short cloak, unarmed
+an elf loremaster of Gondolin: long silver-white hair and no beard, a grey robe and a spellbook
+an elf gardener of Gondolin: short auburn hair and no beard, a brown and green tunic, unarmed
+an elf minstrel of Gondolin: long dark hair and no beard, a white and sky-blue tunic, a lute
+an elf stonemason of Gondolin: short dark hair and no beard, a dusty grey tunic and a mace
+an elf maiden of Gondolin: long flowing dark hair, grey eyes, a white robe and a silver circlet, unarmed
+an elf lamplighter of Gondolin: dark hair in a ponytail and no beard, a dark blue tunic, carrying a torch

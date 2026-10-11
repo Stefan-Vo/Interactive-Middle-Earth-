@@ -1,0 +1,5 @@
+# One soldier of each part of the Hornburg's garrison, in the map's district order. Men of the Westfold: fair-haired, bearded.
+a guard of the Hornburg tower from the Westfold: a tall human with long fair braided hair and a fair beard, steel chain mail, a helmet, a short green cloak, a sword and a round shield
+a gatewarden of the Hornburg: a broad human with brown hair and a brown beard, chain mail, a helmet, a short brown cloak, a sword and a round wooden shield
+an archer of the Deeping Wall: a human with fair hair in a ponytail and a short beard, leather armor, a short green cloak, and a longbow
+a horse-thegn of the Hornburg stables: a human with fair braided hair and a short beard, brown leather armor, a short brown cloak, and a dagger
