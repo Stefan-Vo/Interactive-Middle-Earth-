@@ -1,3 +1,4 @@
+<img width="1629" height="1138" alt="gondolinEngine" src="https://github.com/user-attachments/assets/2b8c8acf-4030-461b-a190-6ca41316cc1a" />
 # citymaker
 
 Makes interactive 3D maps of walled hill cities, like **Gondolin from Above**. One engine draws every city. Each
