@@ -2,7 +2,6 @@
 # citymaker
 
 
-<img width="1342" height="1306" alt="MapOfArda" src="https://github.com/user-attachments/assets/e97eb49a-1574-42ab-8d90-1548351841fb" />
 
 
 Makes interactive 3D maps of walled hill cities, like **Gondolin from Above**. One engine draws every city. Each
@@ -19,6 +18,10 @@ tools/   collect_sprites.py                      turns sprite_forge output into 
          library.py                              stocks the library and lists what is in it
 build.py                                         python build.py <id>  ->  dist/<id>.html
 ```
+
+<img width="1342" height="1306" alt="MapOfArda" src="https://github.com/user-attachments/assets/e97eb49a-1574-42ab-8d90-1548351841fb" />
+
+
 
 Every city gets, from the engine:
 - a hill with a walled summit, rising in walled levels, with gates and stairs where avenues climb
