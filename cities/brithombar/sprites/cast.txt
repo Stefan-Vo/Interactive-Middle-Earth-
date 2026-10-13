@@ -1,0 +1,3 @@
+# Four household guards, then eight townsfolk. Existing Elven art represents the Falathrim.
+noldor/guard noldor/warden noldor/river-warden noldor/smith
+noldor/townsfolk

@@ -1,0 +1,5 @@
+# Barad Eithel's sprites in map order (build.py reads this; see the README, "Reusing sprites").
+# Lords, one soldier per quarter and the townsfolk: the city's own sprites (people.json).
+own
+# Extras, for the locals of the village of Hador's Men (the Edain): warrior, woodwright, herdsman, man, water-bearer.
+edain/guard edain/woodwright edain/herdsman edain/citizen edain/water

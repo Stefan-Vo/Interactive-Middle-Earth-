@@ -12,6 +12,7 @@ cities/  <id>/city.js                            everything specific to one city
 library/ <folk>/folk.json                       shared sprites any city can use (rohirrim, edain, noldor...)
 tools/   collect_sprites.py                      turns sprite_forge output into a city's sprites/people.json
          library.py                              stocks the library and lists what is in it
+         animate.py                              adds walk/attack sheets to existing sprites (no new designs)
 build.py                                         python build.py <id>  ->  dist/<id>.html
 ```
 
@@ -88,6 +89,8 @@ A city's hill is also set in its data:
    path\to\agents\sprite_forge\sprites.bat describe --file lords.txt --scale 1 --transparent
    ```
    The Gemini free tier allows 15 requests a minute, so keep each file to 14 lines or fewer, and wait a minute between files.
+   Keep sprite_forge's defaults for the rest: it also writes walk and attack sheets and each character's `.json`,
+   which the next step copies into the city. Don't pass `--no-json` or `--no-sheet`.
 
 4. **Collect the sprites** into the city, listing the sprite_forge output folders in the same order:
    ```bash
@@ -151,6 +154,9 @@ Not every city has to be rings of houses packed onto a walled hill.
 - **`people().locals`** puts people at places of their own: `{sprite:"citizen" | soldier:<district>, count, spread, a, b,
   home, dayText, name, kicker, desc, house}`. By day they walk between `a` and `b`; at night they are at `home`.
   Mithrim uses them for fishers, Grey-elves in their village, families in the camp, farmers and boatwrights.
+  For locals of another people (Men in an Elvish city), list **`people().extras`** (names, one per sprite) and give the
+  local `extra:<k>`: extras are sprites appended after the townsfolk in `cast.txt`, used only by locals. Barad Eithel's
+  village of Hador's Men uses five Edain sprites from the library this way.
 - Then dress the land with recipes: `E.camp`, `E.huts`, `E.track`, `E.fields`, `E.scatter`. Mithrim's `city.js` shows all of it:
   three steadings with orchards and fields, a waterside in two rows, the host's camp, a Grey-elf village and fishers' huts.
 
@@ -222,6 +228,43 @@ python tools/library.py about rohirrim "who these people are, for writing new sp
 the sprite_forge line it was made from (`prompt` in folk.json), so a new variant can be written to match. Add a city's new
 soldiers and named characters to the library once they look right, so the next city can use them.
 
+## Sprite records and animations
+
+Every sprite record (a city's `sprites/people.json` entry or a library `folk.json` sprite) has the same shape:
+
+```json
+{"name": "Turgon, High King of the Noldor", "race": "elf", "cls": "paladin",
+ "src": "data:image/png;base64,...", "frames": 2, "ms": 520, "w": 64, "h": 64,
+ "character": {"name": "...", "race": "elf", "cls": "paladin", "notes": "...", "look": {...}},
+ "anims": {"walk":   {"src": "data:image/png;base64,...", "frames": 4, "ms": 150},
+           "attack": {"src": "data:image/png;base64,...", "frames": 4, "ms": 120}}}
+```
+
+- `src`, `frames`, `ms`, `w` and `h` are the **idle** sheet: 64×64 frames side by side. Older code that knows only
+  these keeps working.
+- `anims` holds the other animation sheets in the same layout (64×64 frames side by side, `frames` of them, `ms` per
+  frame). Walk is front-facing: feet lift in turn, arms swing. Attack follows the weapon: wind-up, strike, impact, recover.
+  `build.py` passes `anims` to the page; the engine plays `walk` while a person is moving and the idle sheet while they
+  stand (a sprite without `anims.walk` stays on idle). Only `walk` goes into the page for now (`PLAYED` in build.py);
+  add `attack` there when the engine plays it.
+- `character` is the sprite_forge design the sprite was drawn from. With it, the sprite can be redrawn whenever the
+  workshop gains a new animation, without designing it again or calling Gemini.
+
+`collect_sprites.py` and `library.py add-batch` fill in `character` and `anims` from the sprite_forge batch folder.
+Sprites made before that, or when the workshop gains a new animation, get them from `tools/animate.py`:
+
+```bash
+python tools/animate.py library                      # every folk (or name some: library noldor rohirrim)
+python tools/animate.py city all                     # every city's people.json (or: city gondolin edoras)
+python tools/animate.py city gondolin --force        # redraw every sheet (after a workshop change)
+```
+
+It needs `agents/sprite_forge` set up (it runs sprite_forge's `rerender` with sprite_forge's own Python). A record
+without `character` is matched to the saved designs in `agents/sprite_forge/output` by name, race and class. Where
+there are several saved versions, the one that redraws the existing idle sheet pixel for pixel is used, so a city's
+people keep their exact look. A sprite with no exact match is left unchanged and reported. Sprites that already have
+every requested sheet are skipped, so it is safe to run again. It never changes the idle fields.
+
 ## Keeping it fast
 
 - `E.surfaceY(x,z)` works the height out from the terrain's shapes; it's cheap, so call it as often as you like.
@@ -246,3 +289,28 @@ soldiers and named characters to the library once they look right, so the next c
   - `addWater(material)` makes water shimmer.
   - `addLantern(mesh, x, z)` lets the lamplighters light it.
   - `reveal(placeId, object)` shows the object only while that place is selected, like Idril's secret way.
+
+## The Sandbox: designing maps
+
+`sandbox/` is a map editor of its own, published as one page:
+```bash
+python build_sandbox.py          # -> dist/sandbox.html, publish with capabilities {"db":{}, "downloads":true}
+```
+- **Land:** raise, lower, flatten, smooth, mountain and paint brushes on a 201 × 201 height grid (2000 × 2000 units).
+- **Water:** one water level; carve below it for lakes and rivers, fill above it for shores and islands; waterfalls, quays, piers, boats.
+- **Build:** houses, villages, halls, towers, beacons, walled towns, markets, fountains, camps, huts, walls and roads (lines),
+  bridges and stairs (two points), in the noldor, eldarin or rohan style; a City centre marker.
+- **Nature and people:** forests, pines, cypresses, rocks, reeds, fields, herds; groups of library townsfolk who wander their spot.
+- Select an object to name it, describe it, restyle, resize, move or delete it. Undo and redo cover everything.
+- Maps save to the page's database (collections `maps` and `mapinfo`), or to the browser where there is none; Export saves
+  a `.citymap.json` file and Import opens one.
+
+Everything placed is built by `engine/objects.js` with the engine's recipes and the styles. City builds include that file
+too (it only defines a function), so a map looks the same once it becomes a city:
+```bash
+python tools/sandbox_city.py my-land.citymap.json my-land --name "My Land"   # writes cities/my-land/city.js and sprites/cast.txt
+python build.py my-land
+```
+The generated city keeps the map's land, water and painted ground, rebuilds every object, gives each named object a card
+(with its description), and turns each group of people into locals. A city may list `extraStyles:["rohan"]` to build in
+more than one style. Edit the generated `city.js` like any other city to add lore, lords and districts.

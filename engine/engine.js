@@ -70,8 +70,9 @@ const camera=new THREE.PerspectiveCamera(24,1,1,8000);
 const TILT=0.8, ZK=1.85; // TILT = angle from straight down (rad); ZK scales framing distances for the narrow lens
 const controls=new THREE.MapControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.dampingFactor=0.09;
-controls.minDistance=45; controls.maxDistance=1600*SCALE;
-controls.minPolarAngle=TILT; controls.maxPolarAngle=TILT;
+controls.minDistance=8; controls.maxDistance=1600*SCALE;
+controls.minPolarAngle=.2; controls.maxPolarAngle=1.5;   // right-drag tilts from nearly straight down to nearly level (TILT is the default view)
+const EYE_PHI=1.36, FOG0=[scene.fog.near,scene.fog.far], FOG_LOW=[Math.min(FOG0[0],1300),Math.min(FOG0[1],3200)];   // looking level, the fog closes in before the land ends
 controls.zoomSpeed=1.1; controls.screenSpacePanning=false;
 const HOME={target:CAM.target?new THREE.Vector3(CAM.target[0],CAM.target[1],CAM.target[2]):new THREE.Vector3(0,H,6),dist:CAM.dist||960*SCALE,phi:TILT,theta:(180-(CAM.from!==undefined?CAM.from:135))*DEG};   // CAM.from: the compass bearing the camera looks from (135 = south-east)
 camera.position.setFromSpherical(new THREE.Spherical(HOME.dist,HOME.phi,HOME.theta)).add(HOME.target);
@@ -610,6 +611,13 @@ const curTheta=()=>new THREE.Spherical().setFromVector3(camera.position.clone().
 const snap=d=>{ const q=Math.PI/2, base=Math.round((curTheta()-HOME.theta)/q)*q+HOME.theta; flyTo(controls.target,camera.position.distanceTo(controls.target),{theta:base+d*q}); };
 $("rotL").addEventListener("click",()=>snap(-1));
 $("rotR").addEventListener("click",()=>snap(1));
+// eye level: drop to a walker's height looking along the ground; click again to rise back to the usual view from above
+const curPhi=()=>new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target)).phi;
+let eyeBack=null;
+$("eyeView").addEventListener("click",()=>{
+  if(curPhi()<1.15){ eyeBack=camera.position.distanceTo(controls.target); const t=controls.target.clone(); t.y=surfaceY(t.x,t.z)+4; flyTo(t,70,{phi:EYE_PHI}); }   // look at the ground actually there (a raised level, a cliff top)
+  else flyTo(controls.target,eyeBack||420*SCALE,{phi:TILT});
+});
 $("lblToggle").addEventListener("click",e=>{ labelsOn=!labelsOn; e.currentTarget.setAttribute("aria-pressed",String(labelsOn)); });
 const needle=$("needle");
 
@@ -1212,27 +1220,33 @@ const CAST=SPRITES.length?CITY.people(E):{lords:[],townsfolk:[],citizens:{count:
 const HEROES=CAST.lords;
 HEROES.forEach(h=>{ const p=PLACES[h.house]; if(!h.kicker) h.kicker="Lord of the "+p.name; if(!h.desc) h.desc=p.desc; });
 const SOLDIER0=HEROES.length, FOLK0=SOLDIER0+HOUSES.length;   // sprite order: lords, one soldier per district, then townsfolk
-if(SPRITES.length&&SPRITES.length!==FOLK0+CAST.townsfolk.length) console.warn(`citymaker: ${SPRITES.length} sprites, but the city expects ${FOLK0+CAST.townsfolk.length} (${HEROES.length} lords, ${HOUSES.length} soldiers, ${CAST.townsfolk.length} townsfolk)`);
+const EXTRA0=FOLK0+CAST.townsfolk.length, NEXTRA=(CAST.extras||[]).length;   // then any extras: sprites only locals use (L.extra), such as another people living nearby
+if(SPRITES.length&&SPRITES.length!==EXTRA0+NEXTRA) console.warn(`citymaker: ${SPRITES.length} sprites, but the city expects ${EXTRA0+NEXTRA} (${HEROES.length} lords, ${HOUSES.length} soldiers, ${CAST.townsfolk.length} townsfolk${NEXTRA?", "+NEXTRA+" extras":""})`);
 const ROLES={}, ROLE_TEXT={};
 HOUSES.forEach((h,k)=>ROLES[SOLDIER0+k]=(CAST.soldierNames&&CAST.soldierNames[k])||"Soldier of the "+h.name);
 CAST.townsfolk.forEach((f,k)=>{ ROLES[FOLK0+k]=f.name; ROLE_TEXT[f.name]=f.text; });
 const folkSprite=role=>FOLK0+CAST.townsfolk.findIndex(f=>f.role===role);
 
-/* textures: four per sprite (two animation phases, facing left or right) sharing one image */
-const SPR=SPRITES.map(sp=>{
+/* textures: each sheet (frames side by side) gets four variants (two animation phases, facing left or right) sharing one
+   image. Every sprite has its idle sheet; a sprite whose record has anims.walk also gets a walk sheet, played while moving. */
+const SHEETS=[];
+function sheet(src,n,ms){
   const img=new Image(), vars=[];
   for(const flip of [0,1]) for(const phase of [0,1]){
     const tex=new THREE.Texture(img); tex.magFilter=THREE.NearestFilter; tex.minFilter=THREE.LinearFilter; tex.generateMipmaps=false;
-    tex.repeat.set(flip?-.5:.5,1);
+    tex.repeat.set(flip?-1/n:1/n,1);
     vars.push({flip,phase,tex,mat:new THREE.SpriteMaterial({map:tex,alphaTest:.5})});
   }
-  img.onload=()=>vars.forEach(v=>v.tex.needsUpdate=true); img.src=sp.src;
-  return vars;
-});
-const matFor=(i,flip,phase)=>SPR[i][flip*2+phase].mat;
-let animTick=0;
-function stepFrames(){ animTick++; SPR.forEach(vs=>vs.forEach(v=>{ const f=(animTick+v.phase)%2; v.tex.offset.x=v.flip?(f+1)*.5:f*.5; })); }
-stepFrames();
+  img.onload=()=>vars.forEach(v=>v.tex.needsUpdate=true); img.src=src;
+  const sh={n,ms,acc:0,tick:0,vars}; SHEETS.push(sh); return sh;
+}
+const SPR=SPRITES.map(sp=>{ const w=sp.anims&&sp.anims.walk;
+  return {idle:sheet(sp.src,2,520),walk:w&&w.src?sheet(w.src,w.frames||4,w.ms||150):null}; });
+const matFor=(i,flip,phase,walking)=>((walking&&SPR[i].walk)||SPR[i].idle).vars[flip*2+phase].mat;   // no walk sheet: idle
+// a sheet's frame advances on its own clock; the second phase runs a frame (half a walk cycle) apart, so neighbours don't march in step
+function showFrame(sh){ const k=sh.n>2?sh.n/2:1; sh.vars.forEach(v=>{ const f=(sh.tick+v.phase*k)%sh.n; v.tex.offset.x=v.flip?(f+1)/sh.n:f/sh.n; }); }
+function stepSheets(ms){ for(const sh of SHEETS){ sh.acc+=ms; if(sh.acc>=sh.ms){ sh.tick+=Math.floor(sh.acc/sh.ms); sh.acc%=sh.ms; showFrame(sh); } } }
+SHEETS.forEach(sh=>{ sh.tick=1; showFrame(sh); });
 
 /* ---------- daily life: a city clock, a street map people plan routes on, and a schedule for every role ---------- */
 // clock: game minutes since the first midnight. Starts at 08:00. clockRate is game minutes per real second.
@@ -1354,7 +1368,7 @@ const prng=mulberry32(1510);
 const pickOne=a=>a[Math.floor(prng()*a.length)];
 function chooseNear(w,list,k){ let best=null,bd=1e18; for(let i=0;i<(k||3);i++){ const c=pickOne(list), p=c.pos||c, d=p.distanceToSquared(w.pos); if(d<bd){ bd=d; best=c; } } return best; }
 function newWalker(i,opt){
-  const s=new THREE.Sprite(matFor(i,0,people.length%2)); s.center.set(.5,.04); s.userData.personId=people.length;
+  const s=new THREE.Sprite(matFor(i,0,people.length%2,false)); s.center.set(.5,.04); s.userData.personId=people.length;
   scene.add(s); peopleSprites.push(s);
   const w=Object.assign({i,s,pos:new THREE.Vector3(),last:new THREE.Vector3(),flip:0,phase:people.length%2,speed:3.6+prng()*2.2,bobT:prng()*10,
     lane:prng()*2-1,segs:[],sd:0,act:null,doing:"",inside:false,loc:null,offAt:null},opt);
@@ -1480,7 +1494,7 @@ if(SPRITES.length) HOUSES.forEach((h,k)=>{ const c=h.center;
     w.act={kind:"patrol",R:CITY.routines.patrolRing,b:(c+(n?6:-6)+360)%360,dir:n?1:-1,c,half:12,until:Infinity,pause:0}; } });
 // locals: townsfolk (or a district's soldier, L.soldier) the city sets at places of its own, by day pacing between a and b, at night at home (CAST.locals)
 (CAST.locals||[]).forEach(L=>{ for(let k=0;k<(L.count||1);k++){ const off=new THREE.Vector3((prng()-.5)*(L.spread||0),0,(prng()-.5)*(L.spread||0));
-  newWalker(L.soldier!==undefined?SOLDIER0+L.soldier:folkSprite(L.sprite||"citizen"),{role:"local",local:L,speed:2+prng()*1.4,a:L.a.clone().add(off),b:(L.b||L.a).clone().add(off),
+  newWalker(L.soldier!==undefined?SOLDIER0+L.soldier:L.extra!==undefined?EXTRA0+L.extra:folkSprite(L.sprite||"citizen"),{role:"local",local:L,speed:2+prng()*1.4,a:L.a.clone().add(off),b:(L.b||L.a).clone().add(off),
     hall:(L.home||L.a).clone(),dayText:L.dayText,nightText:L.nightText||"Asleep at home"}); } });
 // the lords: by day near their halls, at night inside (where comes from the city)
 const heroWalkers=HEROES.map(h=>{
@@ -1535,7 +1549,7 @@ function showClock(){ const m=Math.floor(((clock%1440)+1440)%1440), t=String(Mat
   if(t!==lastShown){ lastShown=t; clockTimeEl.textContent=t; clockPhaseEl.textContent=phaseOf(clock)+" · Day "+day; } }
 function updatePeople(now){
   const dt=Math.min(.1,(now-(lastNow||now))/1000); lastNow=now;
-  animAcc+=dt*1000; if(animAcc>=520){ animAcc%=520; stepFrames(); }
+  stepSheets(dt*1000);
   if(!clockPaused){ const before=hourOf(clock); clock+=dt*clockRate; const after=hourOf(clock);
     if(after<before) LAMPS.forEach(l=>{ if(!l.lit) setLamp(l,true); });              // midnight
     if(before<9&&after>=9) LAMPS.forEach(l=>{ if(l.lit) setLamp(l,false); }); }      // nine in the morning
@@ -1553,7 +1567,8 @@ function updatePeople(now){
       if(!w.segs.length&&w.act&&clock>=w.act.until) think(w,false);
       else if(!w.act&&!w.segs.length&&w.role!=="patrol") think(w,false); }
     if(moving){ _p0.copy(w.last).project(camera); _p1.copy(w.pos).project(camera); const dx=_p1.x-_p0.x;
-      if(Math.abs(dx)>1e-5){ const f=dx<0?1:0; if(f!==w.flip){ w.flip=f; w.s.material=matFor(w.i,f,w.phase); } } }
+      if(Math.abs(dx)>1e-5) w.flip=dx<0?1:0; }
+    if(w.flip!==w.shownFlip||moving!==w.shownWalk){ w.shownFlip=w.flip; w.shownWalk=moving; w.s.material=matFor(w.i,w.flip,w.phase,moving); }   // only when facing or walking changes
     w.bobT+=dt*(moving?9:0);
     const bob=moving?Math.abs(Math.sin(w.bobT))*.28*k:0;
     w.s.visible=!w.inside;
@@ -1622,6 +1637,11 @@ function frame(now){
   requestAnimationFrame(frame);
   if(tween) stepTween(now);
   controls.update();
+  { const p=camera.position, gy=surfaceY(p.x,p.z)+2.2;                    // never below the ground (the camera rises, still looking at the same spot)
+    if(p.y<gy){ p.y=gy; camera.lookAt(controls.target); }
+    const phi=curPhi(), f=Math.min(1,Math.max(0,(phi-TILT)/(1.35-TILT)));
+    scene.fog.near=FOG0[0]+(FOG_LOW[0]-FOG0[0])*f; scene.fog.far=FOG0[1]+(FOG_LOW[1]-FOG0[1])*f;
+    const eye=$("eyeView"), on=String(phi>1.15); if(eye.getAttribute("aria-pressed")!==on) eye.setAttribute("aria-pressed",on); }
   shiftView();
   updatePeople(now);
   doHover();

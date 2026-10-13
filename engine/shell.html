@@ -78,6 +78,9 @@
     <button id="compass" title="Reset rotation" aria-label="Reset rotation">
       <svg viewBox="0 0 24 24" aria-hidden="true"><g id="needle"><path d="M12 3 L15.5 12 L12 10.6 L8.5 12 Z" fill="#c0392b"/><path d="M12 21 L8.5 12 L12 13.4 L15.5 12 Z" fill="currentColor" opacity=".55"/></g></svg>
     </button>
+    <button id="eyeView" title="Eye-level view (click again to look down from above)" aria-label="Eye-level view" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></svg>
+    </button>
     <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
     <button id="zout" title="Zoom out" aria-label="Zoom out">&minus;</button>
     <button id="home" title="Show the whole city" aria-label="Show the whole city">
@@ -91,7 +94,7 @@
     </button>
   </div>
 
-  <div id="hint" class="panel"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Right-drag</b> or the arrow buttons to rotate · <b>Click</b> a building</div>
+  <div id="hint" class="panel"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Right-drag</b> to rotate and tilt · the eye button for eye level · <b>Click</b> a building</div>
   <div id="tip" hidden></div>
   <div id="toast" class="panel" hidden role="status"></div>
 </div>

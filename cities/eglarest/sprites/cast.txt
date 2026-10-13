@@ -1,0 +1,3 @@
+# Existing Elven artwork stands in for Falathrim; no named lord portrait.
+noldor/guard noldor/warden noldor/river-warden noldor/smith
+noldor/townsfolk

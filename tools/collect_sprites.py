@@ -11,6 +11,8 @@ cities/<id>/sprites/people.json (what build.py embeds), a sheets/ copy of every 
 """
 import base64, json, pathlib, shutil, sys
 
+from library import sprite_extras as extras  # the character and walk/attack sheets, shared with library.py
+
 if len(sys.argv) < 3:
     sys.exit(__doc__)
 HERE = pathlib.Path(__file__).resolve().parent.parent / "cities" / sys.argv[1] / "sprites"
@@ -34,7 +36,7 @@ for arg in sys.argv[2:]:
         sheet = batch / (files["sheet"] if "sheet" in files else files["sheets"]["idle"])
         dest = f"{len(people):02d}-{sheet.name}"   # numbered: two batches can both have a "Nydris"
         shutil.copy2(sheet, SHEETS / dest)
-        people.append({
+        person = {
             "file": dest,
             "name": ch["name"],
             "race": ch.get("race"),
@@ -44,7 +46,9 @@ for arg in sys.argv[2:]:
             "h": anim["frameHeight"],
             "ms": anim["frameDurationMs"],
             "src": "data:image/png;base64," + base64.b64encode(sheet.read_bytes()).decode("ascii"),
-        })
+        }
+        person.update(extras(batch, manifest, files))
+        people.append(person)
 
 (HERE / "people.json").write_text(json.dumps(people, indent=1), encoding="utf-8")
 

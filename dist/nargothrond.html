@@ -258,6 +258,9 @@ output{font-variant-numeric:tabular-nums;font-size:13px;min-width:40px;text-alig
     <button id="compass" title="Reset rotation" aria-label="Reset rotation">
       <svg viewBox="0 0 24 24" aria-hidden="true"><g id="needle"><path d="M12 3 L15.5 12 L12 10.6 L8.5 12 Z" fill="#c0392b"/><path d="M12 21 L8.5 12 L12 13.4 L15.5 12 Z" fill="currentColor" opacity=".55"/></g></svg>
     </button>
+    <button id="eyeView" title="Eye-level view (click again to look down from above)" aria-label="Eye-level view" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></svg>
+    </button>
     <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
     <button id="zout" title="Zoom out" aria-label="Zoom out">&minus;</button>
     <button id="home" title="Show the whole city" aria-label="Show the whole city">
@@ -271,7 +274,7 @@ output{font-variant-numeric:tabular-nums;font-size:13px;min-width:40px;text-alig
     </button>
   </div>
 
-  <div id="hint" class="panel"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Right-drag</b> or the arrow buttons to rotate · <b>Click</b> a building</div>
+  <div id="hint" class="panel"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Right-drag</b> to rotate and tilt · the eye button for eye level · <b>Click</b> a building</div>
   <div id="tip" hidden></div>
   <div id="toast" class="panel" hidden role="status"></div>
 </div>
@@ -1300,8 +1303,9 @@ const camera=new THREE.PerspectiveCamera(24,1,1,8000);
 const TILT=0.8, ZK=1.85; // TILT = angle from straight down (rad); ZK scales framing distances for the narrow lens
 const controls=new THREE.MapControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.dampingFactor=0.09;
-controls.minDistance=45; controls.maxDistance=1600*SCALE;
-controls.minPolarAngle=TILT; controls.maxPolarAngle=TILT;
+controls.minDistance=8; controls.maxDistance=1600*SCALE;
+controls.minPolarAngle=.2; controls.maxPolarAngle=1.5;   // right-drag tilts from nearly straight down to nearly level (TILT is the default view)
+const EYE_PHI=1.36, FOG0=[scene.fog.near,scene.fog.far], FOG_LOW=[Math.min(FOG0[0],1300),Math.min(FOG0[1],3200)];   // looking level, the fog closes in before the land ends
 controls.zoomSpeed=1.1; controls.screenSpacePanning=false;
 const HOME={target:CAM.target?new THREE.Vector3(CAM.target[0],CAM.target[1],CAM.target[2]):new THREE.Vector3(0,H,6),dist:CAM.dist||960*SCALE,phi:TILT,theta:(180-(CAM.from!==undefined?CAM.from:135))*DEG};   // CAM.from: the compass bearing the camera looks from (135 = south-east)
 camera.position.setFromSpherical(new THREE.Spherical(HOME.dist,HOME.phi,HOME.theta)).add(HOME.target);
@@ -1630,7 +1634,8 @@ STYLE.levelWalls(E);
   });
   // rows of houses: the style sets their size and spacing
   const RW=STYLE.rows, ROW=RW.depth, LANE=RW.lane, rows=[];
-  for(let r=RW.start;r<215;r+=ROW*2+LANE){ rows.push(r+ROW/2, r+ROW*1.5); }
+  const ROWS_TO=Math.max(215,CITY.terrain.summit.radius*1.25);   // 215 on a summit of 172 or less, as it always was
+  for(let r=RW.start;r<ROWS_TO;r+=ROW*2+LANE){ rows.push(r+ROW/2, r+ROW*1.5); }
   if(FILL.rows!==false) rows.forEach(rc=>{
     const circ=Math.PI*2*rc; let sArc=rand()*5;
     while(sArc<circ){
@@ -1839,6 +1844,13 @@ const curTheta=()=>new THREE.Spherical().setFromVector3(camera.position.clone().
 const snap=d=>{ const q=Math.PI/2, base=Math.round((curTheta()-HOME.theta)/q)*q+HOME.theta; flyTo(controls.target,camera.position.distanceTo(controls.target),{theta:base+d*q}); };
 $("rotL").addEventListener("click",()=>snap(-1));
 $("rotR").addEventListener("click",()=>snap(1));
+// eye level: drop to a walker's height looking along the ground; click again to rise back to the usual view from above
+const curPhi=()=>new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target)).phi;
+let eyeBack=null;
+$("eyeView").addEventListener("click",()=>{
+  if(curPhi()<1.15){ eyeBack=camera.position.distanceTo(controls.target); const t=controls.target.clone(); t.y=surfaceY(t.x,t.z)+4; flyTo(t,70,{phi:EYE_PHI}); }   // look at the ground actually there (a raised level, a cliff top)
+  else flyTo(controls.target,eyeBack||420*SCALE,{phi:TILT});
+});
 $("lblToggle").addEventListener("click",e=>{ labelsOn=!labelsOn; e.currentTarget.setAttribute("aria-pressed",String(labelsOn)); });
 const needle=$("needle");
 
@@ -2851,6 +2863,11 @@ function frame(now){
   requestAnimationFrame(frame);
   if(tween) stepTween(now);
   controls.update();
+  { const p=camera.position, gy=surfaceY(p.x,p.z)+2.2;                    // never below the ground (the camera rises, still looking at the same spot)
+    if(p.y<gy){ p.y=gy; camera.lookAt(controls.target); }
+    const phi=curPhi(), f=Math.min(1,Math.max(0,(phi-TILT)/(1.35-TILT)));
+    scene.fog.near=FOG0[0]+(FOG_LOW[0]-FOG0[0])*f; scene.fog.far=FOG0[1]+(FOG_LOW[1]-FOG0[1])*f;
+    const eye=$("eyeView"), on=String(phi>1.15); if(eye.getAttribute("aria-pressed")!==on) eye.setAttribute("aria-pressed",on); }
   shiftView();
   updatePeople(now);
   doHover();

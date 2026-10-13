@@ -84,8 +84,19 @@ def build(city_id):
         styles.insert(0, code)
         m = re.search(r'^\s*extends\s*:\s*"([\w-]+)"', code, re.M)
         name = m.group(1) if m else None
+    # a city made in the sandbox may build in more than one style: extraStyles:["rohan","eldarin"] near the top of city.js
+    m = re.search(r'^\s*extraStyles\s*:\s*\[([^\]]*)\]', city_js, re.M)
+    for extra in (re.findall(r'"([\w-]+)"', m.group(1)) if m else []):
+        if extra != f['style']:
+            styles.append(io.open(os.path.join(HERE, 'styles', extra + '.js'), encoding='utf-8').read())
 
-    sprites = [{'n': p['name'], 'src': p['src']} for p in cast(city_dir)]
+    # each sprite: its name and idle sheet, plus the animation sheets the engine plays (only walk, for now; attack stays out
+    # of the page until something plays it, to keep pages small)
+    PLAYED = ('walk',)
+    def anims(p):
+        a = {k: v for k, v in (p.get('anims') or {}).items() if k in PLAYED}
+        return {'anims': a} if a else {}
+    sprites = [dict({'n': p['name'], 'src': p['src']}, **anims(p)) for p in cast(city_dir)]
     if not sprites:
         print('note: no sprites/people.json or sprites/cast.txt, so the city will have no people')
 
@@ -98,7 +109,7 @@ def build(city_id):
                          ('/*STYLE_JS*/', chr(10).join(styles)),
                          ('/*CITY_JS*/', city_js),
                          ('/*CITY_SPRITES*/', 'window.CITY.sprites=' + json.dumps(sprites, separators=(',', ':')) + ';'),
-                         ('/*RECIPES_JS*/', read('engine', 'recipes.js')),
+                         ('/*RECIPES_JS*/', read('engine', 'recipes.js') + chr(10) + read('engine', 'objects.js')),   # objects.js: the sandbox's map objects
                          ('/*ENGINE_JS*/', read('engine', 'engine.js'))]:
         assert page.count(marker) == 1, marker
         page = page.replace(marker, code.replace('</script', '<\\/script'))

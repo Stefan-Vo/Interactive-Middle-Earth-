@@ -1,0 +1,150 @@
+<title>Citymaker Sandbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+/*ENGINE_CSS*/
+/* Sandbox layout: the land fills the screen; a bar of map actions across the top, the tool panel on the left, the selected
+   object's card on the right, the map controls bottom-right. Same white-stone panels and tokens as the city pages. */
+#topbar{position:absolute;top:16px;left:16px;right:16px;z-index:4;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px}
+#topbar .brand{padding:0 6px 0 4px;display:flex;align-items:baseline;gap:10px}
+#topbar .brand h1{font-size:22px}
+#mapName{font:inherit;font-family:var(--f-display);font-size:16px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:5px 9px;min-width:0;width:15em;max-width:40vw}
+#topbar .grow{flex:1}
+#topbar .mini{padding:6px 11px;font-size:13.5px}
+#saveState{color:var(--muted);font-size:12.5px;margin:0 4px}
+#tools{position:absolute;top:76px;left:16px;bottom:16px;width:300px;z-index:3;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin:12px 12px 8px;padding:3px;border:1px solid var(--line);border-radius:9px}
+.tabs button{border:0;background:transparent;border-radius:6px;padding:6px 0;font-weight:500;font-size:12px;cursor:pointer;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.tscroll{flex:1;min-height:0;overflow:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:12px}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tool{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 4px 7px;cursor:pointer;font-size:12.5px;line-height:1.15;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;color:var(--ink)}
+.tool svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6}
+.tool[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.sect h3{margin:0 0 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.opt{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.opt select{font:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--ink);padding:4px 6px;flex:1;min-width:0}
+.swatches{display:flex;gap:5px;flex-wrap:wrap}
+.swatches button{width:30px;height:24px;border-radius:6px;border:1px solid rgba(0,0,0,.25);cursor:pointer;padding:0}
+.swatches button[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
+.thint{font-size:13px;color:var(--muted);line-height:1.4;margin:0}
+#inspect{position:absolute;top:76px;right:16px;width:300px;max-height:calc(100% - 92px);overflow:auto;z-index:3;box-sizing:border-box;padding:16px 18px}
+#inspect .acts{margin-top:12px}
+#mapsDlg{position:absolute;top:76px;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 32px));max-height:calc(100% - 100px);overflow:auto;z-index:6;box-sizing:border-box;padding:18px 20px}
+#mapsDlg h2{margin:0 0 10px;font-family:var(--f-display);font-weight:400;font-size:24px}
+.maplist{display:flex;flex-direction:column;gap:6px;margin:0 0 14px}
+.maprow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.maprow .nm{flex:1;min-width:0;font-family:var(--f-display);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.maprow .when{font-size:12px;color:var(--muted);white-space:nowrap}
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.preset{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:10px;cursor:pointer;text-align:left;color:var(--ink)}
+.preset b{display:block;font-family:var(--f-display);font-weight:400;font-size:15px}
+.preset span{font-size:12.5px;color:var(--muted)}
+#brushRing{position:absolute;pointer-events:none}
+#importFile{display:none}
+@media (max-width:760px){
+  #topbar{top:10px;left:10px;right:10px}
+  #mapName{width:9em}
+  #tools{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:46%}
+  #inspect{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:46%}
+  #controls{top:96px;bottom:auto}
+}
+</style>
+<div id="app">
+  <div id="scene" aria-label="The land you are editing, seen from above"></div>
+  <div id="labels"></div>
+
+  <header id="topbar" class="panel">
+    <div class="brand"><h1>Sandbox</h1></div>
+    <label for="mapName" hidden>Map name</label>
+    <input id="mapName" type="text" value="Untitled land" autocomplete="off" spellcheck="false">
+    <span id="saveState" aria-live="polite"></span>
+    <span class="grow"></span>
+    <button class="mini" id="undoBtn" title="Undo (Ctrl+Z)" disabled>Undo</button>
+    <button class="mini" id="redoBtn" title="Redo (Ctrl+Y)" disabled>Redo</button>
+    <button class="mini" id="mapsBtn" title="Open, start or delete maps">Maps</button>
+    <button class="mini" id="saveBtn" title="Save this map (Ctrl+S)">Save</button>
+    <button class="mini" id="exportBtn" title="Save this map as a file, to turn into a city or share">Export</button>
+    <button class="mini" id="importBtn" title="Open a map file">Import</button>
+    <input type="file" id="importFile" accept=".json,application/json">
+  </header>
+
+  <aside id="tools" class="panel" aria-label="Tools">
+    <div class="tabs" role="tablist" aria-label="Tool groups">
+      <button role="tab" data-tab="land" aria-selected="true">Land</button>
+      <button role="tab" data-tab="water" aria-selected="false">Water</button>
+      <button role="tab" data-tab="build" aria-selected="false">Build</button>
+      <button role="tab" data-tab="nature" aria-selected="false">Nature</button>
+      <button role="tab" data-tab="people" aria-selected="false">People</button>
+      <button role="tab" data-tab="great" aria-selected="false">Great</button>
+    </div>
+    <div class="tscroll">
+      <div class="sect"><div class="tgrid" id="toolGrid"></div></div>
+      <p class="thint" id="toolHint"></p>
+      <div class="opt" id="optBrush">
+        <div class="row"><label for="sizeIn" class="olabel">Size</label><input type="range" id="sizeIn" min="8" max="320" step="1" value="70"><output id="sizeOut" for="sizeIn">70</output></div>
+        <div class="row"><label for="strIn" class="olabel">Strength</label><input type="range" id="strIn" min="5" max="100" step="1" value="45"><output id="strOut" for="strIn">45</output></div>
+      </div>
+      <div class="opt" id="optGround" hidden>
+        <span class="olabel">Ground</span><div class="swatches" id="groundSw"></div>
+      </div>
+      <div class="opt" id="optWater" hidden>
+        <div class="row"><label for="levelIn" class="olabel">Water level</label><input type="range" id="levelIn" min="-20" max="80" step=".5" value="0"><output id="levelOut" for="levelIn">0</output></div>
+      </div>
+      <div class="opt" id="optPlace" hidden>
+        <div class="row" id="styleRow"><label for="styleIn" class="olabel">Style</label><select id="styleIn"><option value="noldor">Noldor (white stone)</option><option value="eldarin">High Elven (arcades)</option><option value="rohan">Rohan (timber)</option></select></div>
+        <div class="row" id="heroRow" hidden><label for="heroIn" class="olabel">Who</label><select id="heroIn"></select></div>
+        <div class="row" id="folkRow" hidden><label for="folkIn" class="olabel">Folk</label><select id="folkIn"></select></div>
+        <div class="row"><label for="scaleIn" class="olabel">Scale</label><input type="range" id="scaleIn" min=".5" max="2.5" step=".1" value="1"><output id="scaleOut" for="scaleIn">1.0×</output></div>
+        <div class="row"><span class="olabel">Turn</span><button class="mini" id="rotMinus" title="Turn left (Q)">&minus;15&deg;</button><output id="rotOut">0&deg;</output><button class="mini" id="rotPlus" title="Turn right (E)">+15&deg;</button></div>
+        <div class="row" id="countRow" hidden><label for="countIn" class="olabel">How many</label><input type="range" id="countIn" min="2" max="40" step="1" value="10"><output id="countOut" for="countIn">10</output></div>
+      </div>
+      <div class="opt">
+        <p class="thint" id="lineHint" hidden>Click to add points. Double-click or press Enter to finish; Esc cancels.</p>
+        <p class="thint"><b>Right-drag</b> turns and tilts the view; <b>Space+drag</b> or the middle button pans; <b>scroll</b> zooms. With the Select tool, drag an object to move it, or click it to name or delete it.</p>
+      </div>
+    </div>
+  </aside>
+
+  <article id="inspect" class="panel" hidden aria-live="polite"></article>
+
+  <section id="mapsDlg" class="panel" hidden aria-label="Maps">
+    <div class="info-head"><div><h2>Maps</h2></div><button id="closeMaps" class="mini" aria-label="Close">&times;</button></div>
+    <div class="maplist" id="mapList"></div>
+    <h3 class="olabel">Start a new map</h3>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <div id="controls">
+    <button id="rotL" title="Rotate left 90°" aria-label="Rotate view left">&#x27F2;</button>
+    <button id="rotR" title="Rotate right 90°" aria-label="Rotate view right">&#x27F3;</button>
+    <button id="eyeView" title="Eye-level view (click again to look down from above)" aria-label="Eye-level view" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></svg>
+    </button>
+    <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+    <button id="zout" title="Zoom out" aria-label="Zoom out">&minus;</button>
+    <button id="home" title="Show the whole map" aria-label="Show the whole map">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+    </button>
+  </div>
+  <div id="toast" class="panel" hidden role="status"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/*STYLES_JS*/
+</script>
+<script>
+/*RECIPES_JS*/
+</script>
+<script>
+/*OBJECTS_JS*/
+</script>
+<script>
+/*SPRITES_JS*/
+</script>
+<script>
+/*SANDBOX_JS*/
+</script>
