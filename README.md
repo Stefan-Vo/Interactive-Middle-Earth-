@@ -1,4 +1,8 @@
+
 # citymaker
+
+
+
 
 Makes interactive 3D maps of walled hill cities, like **Gondolin from Above**. One engine draws every city. Each
 city is a single data file plus its pixel-art sprites. `build.py` combines them into one self-contained page.
@@ -15,6 +19,10 @@ tools/   collect_sprites.py                      turns sprite_forge output into 
          animate.py                              adds walk/attack sheets to existing sprites (no new designs)
 build.py                                         python build.py <id>  ->  dist/<id>.html
 ```
+
+<img width="1342" height="1306" alt="MapOfArda" src="https://github.com/user-attachments/assets/e97eb49a-1574-42ab-8d90-1548351841fb" />
+
+
 
 Every city gets, from the engine:
 - a hill with a walled summit, rising in walled levels, with gates and stairs where avenues climb
@@ -51,6 +59,8 @@ A city's hill is also set in its data:
 - **`terrain.colors`:** the hill's colors.
 
 ## Making a new city
+
+<img width="1629" height="1138" alt="gondolinEngine" src="https://github.com/user-attachments/assets/2b8c8acf-4030-461b-a190-6ca41316cc1a" />
 
 1. **Copy the template.** Copy `cities/_template` to `cities/<id>` (for example `minas-tirith`) and set `id:"<id>"` in
    `city.js`. Build it right away to see the starting point:
